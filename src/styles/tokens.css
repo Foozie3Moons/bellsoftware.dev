@@ -39,11 +39,11 @@
 }
 
 [data-theme="dark"] {
-  --bg: #0f0f0e;
+  --bg: #181816;
   --fg: #c8c8c3;
   --fg-strong: #f0f0eb;
   --muted: #888884;
-  --border: #2a2a28;
+  --border: #454542;
   --accent: #2ab0c4;
   --accent-hover: #39d4e8;
   --code-bg: #252523;

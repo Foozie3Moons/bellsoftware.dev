@@ -20,7 +20,12 @@ const minutes = readingTime(post.body ?? '');
 
 <Layout title={`${post.data.title} — bellsoftware`} description={post.data.description} active="writing">
   <article>
-    <a href="/writing" class="back-link">Writing</a>
+    <a href="/writing" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M10 12L6 8L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Writing
+    </a>
 
     <ArticleHeader title={post.data.title} pubDate={post.data.pubDate} readingTime={minutes} />
 
@@ -58,17 +63,15 @@ const minutes = readingTime(post.body ?? '');
     letter-spacing: 0.02em;
   }
 
-  .back-link::before {
-    content: '← ';
+  .back-link svg {
     transition: transform 160ms ease;
-    display: inline-block;
   }
 
   .back-link:hover {
     color: var(--fg);
   }
 
-  .back-link:hover::before {
+  .back-link:hover svg {
     transform: translateX(-3px);
   }
 

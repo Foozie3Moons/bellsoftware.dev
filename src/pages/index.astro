@@ -22,7 +22,12 @@ const posts = (await getCollection('writing', ({ data }) => !data.draft))
   <section class="writing">
     <div class="label">Recent writing</div>
     <PostList posts={posts} headingLevel="h3" />
-    <a href="/writing" class="archive-link">All writing&nbsp;</a>
+    <a href="/writing" class="archive-link">
+      All writing
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M6 4L10 8L6 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
   </section>
 </Layout>
 
@@ -87,12 +92,11 @@ const posts = (await getCollection('writing', ({ data }) => !data.draft))
     gap: var(--space-2);
   }
 
-  .archive-link::after {
-    content: '→';
+  .archive-link svg {
     transition: transform 160ms ease;
   }
 
-  .archive-link:hover::after {
+  .archive-link:hover svg {
     transform: translateX(3px);
   }
 </style>
