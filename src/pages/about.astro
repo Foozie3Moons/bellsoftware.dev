@@ -1,0 +1,46 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/prose.css';
+---
+
+<Layout title="About — bellsoftware" description="About this site." active="about">
+  <article>
+    <header class="article-header">
+      <h1>About</h1>
+    </header>
+    <div class="prose">
+      <p>This is a placeholder. Real bio coming soon.</p>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  article {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: var(--space-16) 0 var(--space-24);
+  }
+
+  @media (max-width: 640px) {
+    article {
+      padding: var(--space-12) 0 var(--space-16);
+    }
+  }
+
+  .article-header {
+    margin-bottom: var(--space-12);
+  }
+
+  .article-header h1 {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.15;
+  }
+
+  @media (max-width: 640px) {
+    .article-header h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+</style>

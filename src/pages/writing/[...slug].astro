@@ -1,0 +1,132 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/prose.css';
+import { formatLong, isoDate } from '../../utils/format-date';
+import { readingTime } from '../../utils/reading-time';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('writing', ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const minutes = readingTime(post.body ?? '');
+---
+
+<Layout title={`${post.data.title} — bellsoftware`} description={post.data.description} active="writing">
+  <article>
+    <a href="/writing" class="back-link">Writing</a>
+
+    <header class="article-header">
+      <h1>{post.data.title}</h1>
+      <div class="article-meta">
+        <time datetime={isoDate(post.data.pubDate)}>{formatLong(post.data.pubDate)}</time>
+        <span class="dot">·</span>
+        <span>{minutes}</span>
+      </div>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <div class="article-end">
+      <a href="/writing">More writing</a>
+      <span>—</span>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  article {
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: var(--space-16) 0 var(--space-24);
+  }
+
+  @media (max-width: 640px) {
+    article {
+      padding: var(--space-12) 0 var(--space-16);
+    }
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--muted);
+    margin-bottom: var(--space-12);
+    letter-spacing: 0.02em;
+  }
+
+  .back-link::before {
+    content: '← ';
+    transition: transform 160ms ease;
+    display: inline-block;
+  }
+
+  .back-link:hover {
+    color: var(--fg);
+  }
+
+  .back-link:hover::before {
+    transform: translateX(-3px);
+  }
+
+  .article-header {
+    margin-bottom: var(--space-16);
+  }
+
+  .article-header h1 {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.022em;
+    margin-bottom: var(--space-6);
+  }
+
+  @media (max-width: 640px) {
+    .article-header h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  .article-meta {
+    display: flex;
+    gap: var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  .article-meta .dot {
+    color: var(--border);
+  }
+
+  .article-end {
+    margin-top: var(--space-16);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: var(--text-xs);
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  .article-end a {
+    color: var(--muted);
+  }
+
+  .article-end a:hover {
+    color: var(--fg);
+  }
+</style>
