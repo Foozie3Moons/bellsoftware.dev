@@ -1,7 +1,7 @@
 ---
 title: "The work isn't prompting"
 description: "Six weeks building a household AI assistant from scratch, and what I expected to be prompt engineering turned out to be org design."
-pubDate: 2026-04-29
+pubDate: 2026-04-30
 ---
 
 I've been using agentic coding tools for a few months now, long enough to feel comfortable with how they work. Six weeks ago I set out to build a household AI assistant. I'd seen a lot online about OpenClaw and personal AI assistants, but I'm also very aware of the security issues it and others like it have had. So I decided to do what any developer with limited free time would do and build the whole thing myself from the ground up.
@@ -103,7 +103,7 @@ Now I can see:
 - How many tokens they burn
 - Whether they're being used as intended
 
-Before this I was flying blind. The only way to gauge whether the fleet was working was vibes.
+Before this I was flying blind. The only way to gauge whether the fleet was working was vibes. There are opportunities for improvement here, but it at least gave me some information about what was happening.
 
 ### Mechanical enforcement
 
