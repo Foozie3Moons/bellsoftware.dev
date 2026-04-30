@@ -1,10 +1,10 @@
 ---
-title: "SRE with limited resources"
+title: "Site Reliability Engineering with limited resources"
 description: "The SRE Workbook is excellent. Its assumptions don't always translate."
 pubDate: 2026-04-30
 ---
 
-The promise of SRE is compelling. Meaningful SLOs that reflect real user experience. Alerting that catches problems before customers notice. Error budgets that force conversations between reliability and velocity. I've read the SRE Workbook cover to cover. I've implemented pieces of it. The model makes sense.
+I've been workign with SRE related The promise of SRE is compelling. Meaningful SLOs that reflect real user experience. Alerting that catches problems before customers notice. Error budgets that force conversations between reliability and velocity. I've read the SRE Workbook cover to cover. I've implemented pieces of it. The model makes sense.
 
 The lived experience has been different. I've spent late nights chasing alerts that turned out to be noise. I've tuned thresholds for weeks only to find they still don't correlate with actual user-facing issues. I've burned out on pager rotations where most of what woke me up didn't matter, and what did matter sometimes slipped through anyway. I can see this type of problem existing in many mid-size organisations, not just mine.
 
@@ -182,3 +182,7 @@ Trust in alerting increases
 ```
 
 I'm not claiming this is solved. The failure modes are obvious: an agent that suppresses real alerts is worse than noise. The judgment calls are hard. But the direction is clear. The bottleneck on SRE practice at scale isn't tooling or methodology. It's human analysis capacity. That's exactly what AI systems should be good at augmenting.
+
+---
+
+*Opinions are my own and do not represent my employer.*
