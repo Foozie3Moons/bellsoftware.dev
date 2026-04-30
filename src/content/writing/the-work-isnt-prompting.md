@@ -27,11 +27,11 @@ Mar 29  Revert "feat: add dev agent for code changes via Telegram"
 
 Three commits building a feature. Three commits deleting it. Complete waste. No explanation needed because I know exactly what happened: the agent made locally reasonable decisions that didn't survive contact with reality. The fix didn't work, the infrastructure change caused problems, so I reverted everything. This pattern repeated constantly.
 
-PII detection took seven fixes in three days. The initial implementation looked good but redacted "Apple" and "the" as personal names. Each fix was a patch rather than stepping back to rethink the approach.
+PII detection took seven fixes in three days. The initial implementation looked good but redacted `"Apple"` and `"the"` as personal names. Each fix was a patch rather than stepping back to rethink the approach.
 
 The dashboard got rewritten four times in two weeks. Each commit message used words like "rebuild," "redesign," "modernize." One of them mentioned "consistent patterns" as if that were new, after two weeks of dashboard work.
 
-Code written on day one was called "legacy" by day four.
+Code written on day one was called **legacy** by day four.
 
 An auth implementation shipped and got replaced with a completely different approach the same day. The first version never should have been committed.
 
@@ -43,13 +43,13 @@ The fleet:
 
 | Agent | Role |
 |-------|------|
-| Orchestrator | Dispatches work to the right specialist, tracks progress |
-| Architect | Runs discovery, produces specs, never writes code |
-| Decomposer | Breaks specs into tasks, never implements |
-| Domain Engineer | Owns backend business logic |
-| Infra Engineer | Owns infrastructure, deployment, observability |
-| LLM Engineer | Owns the AI/LLM integration layer |
-| Skill Author | Writes and maintains the household assistant's skills |
+| **Orchestrator** | Dispatches work to the right specialist, tracks progress |
+| **Architect** | Runs discovery, produces specs, never writes code |
+| **Decomposer** | Breaks specs into tasks, never implements |
+| **Domain Engineer** | Owns backend business logic |
+| **Infra Engineer** | Owns infrastructure, deployment, observability |
+| **LLM Engineer** | Owns the AI/LLM integration layer |
+| **Skill Author** | Writes and maintains the household assistant's skills |
 
 The first task I gave them was to clean up the mess: "I don't know what's current or legacy." That wasn't confusion. That was an accurate description of what the generalist had produced. The plausible decisions at every fork hadn't cohered into anything I could reason about.
 
@@ -59,7 +59,7 @@ The fix wasn't a single shift. It was iterative. Each failure mode got its own m
 
 ### Specialists
 
-I carved work into specialized agents with tight system prompts and narrow tool surfaces. One that only thinks about architecture. One that only writes specs. One that only does dashboard work. Each with their own constraints, their own scope.
+I carved work into specialized agents with tight **system prompts** and narrow **tool surfaces**. One that only thinks about architecture. One that only writes specs. One that only does dashboard work. Each with their own constraints, their own scope.
 
 Here's a real example. This is the agent definition for the architect specialist:
 
@@ -77,11 +77,11 @@ dispatch other agents. Your only output is a spec document.
 - You do not produce a spec without running discovery first.
 ```
 
-The key is what's excluded. The architect doesn't know how to write a React component because it doesn't have the tools or the scope. It can't drift into implementation because implementation isn't in its world. Compare that to the dashboard engineer, which owns specific files across specific layers and explicitly does NOT touch agent management or chat features. Each specialist has walls, not just guidance.
+The key is what's excluded. The architect doesn't know how to write a React component because it doesn't have the tools or the scope. It can't drift into implementation because implementation isn't in its world. Compare that to the **dashboard engineer**, which owns specific files across specific layers and explicitly does NOT touch agent management or chat features. Each specialist has walls, not just guidance.
 
 ### Observability
 
-I added dispatch logging so I could see what was happening. Every time an agent spawns a subagent, a hook logs it:
+I added dispatch logging so I could see what was happening. Every time an agent spawns a subagent, a `hook` logs it:
 
 ```python
 if event_name == "PreToolUse":
@@ -107,9 +107,9 @@ Before this I was flying blind. The only way to gauge whether the fleet was work
 
 ### Mechanical enforcement
 
-I added hooks that block mistakes before they're written. Here's one that stops migrations from landing in the wrong directory.
+I added `hooks` that block mistakes before they're written. Here's one that stops migrations from landing in the wrong directory.
 
-The codebase has two directories that look like migration directories: `src/backend/core/database/migrations/` (test fixtures) and `migrations/orchestrator/` (the real one). The Nest app only reads from the second. An agent sees the first, thinks "that's where migrations go," writes the file, runs the tests. Tests pass because the fixtures work fine. Then Nest crashes at boot: "no such table."
+The codebase has two directories that look like migration directories: `src/backend/core/database/migrations/` (test fixtures) and `migrations/orchestrator/` (the real one). The Nest app only reads from the second. An agent sees the first, thinks "that's where migrations go," writes the file, runs the tests. Tests pass because the fixtures work fine. Then Nest crashes at boot: `no such table`.
 
 ```bash
 # Block writes to *.sql under src/backend/core/database/migrations/
@@ -124,17 +124,17 @@ EOF
 fi
 ```
 
-This happened about ten times. Each time I corrected the agent. Each time it happened again. Eventually I got fed up and added the hook. The solution wasn't better instructions. It was a gate that makes the mistake impossible. I'd forgotten this was even a problem until I went looking for examples for this post.
+This happened about ten times. Each time I corrected the agent. Each time it happened again. Eventually I got fed up and added the `hook`. The solution wasn't better instructions. It was a gate that makes the mistake impossible. I'd forgotten this was even a problem until I went looking for examples for this post.
 
 ## What changed
 
 The first time I ran the specialist setup I expected marginal improvement. What I got was a different category of output.
 
-I also got a clear view of the damage that had already been done. A few weeks after implementing specialists, I was fine-tuning some CSS and kept running into trouble getting small things right. I inspected the page, started editing the HTML directly, and noticed the layout was broken in ways that didn't make sense. A "page" element had `position: absolute`, which obviously breaks relationships with other elements. I went looking for the source in the CSS modules. Couldn't find it. Looked at the component itself.
+I also got a clear view of the damage that had already been done. A few weeks after implementing specialists, I was fine-tuning some CSS and kept running into trouble getting small things right. I inspected the page, started editing the HTML directly, and noticed the layout was broken in ways that didn't make sense. A `page` element had `position: absolute`, which obviously breaks relationships with other elements. I went looking for the source in the CSS Modules. Couldn't find it. Looked at the component itself.
 
-Inline styles. Everywhere.
+**Inline styles**. Everywhere.
 
-I audited the codebase. 461 inline style calls across 74 files. The convention was CSS Modules. None of the inline styles were genuinely dynamic. Every single one was drift from the generalist phase: locally reasonable decisions that had accumulated into incoherence. The chat layout had been reimplemented four times because no approach was locked. This damage was already baked in before I implemented specialists. I just hadn't seen it until I started looking closely.
+I audited the codebase. 461 **inline style** calls across 74 files. The convention was `CSS Modules`. None of the **inline styles** were genuinely dynamic. Every single one was drift from the generalist phase: locally reasonable decisions that had accumulated into incoherence. The chat layout had been reimplemented four times because no approach was locked. This damage was already baked in before I implemented specialists. I just hadn't seen it until I started looking closely.
 
 But the new code was different. The code was more consistent. The decisions stayed coherent across the codebase. The agents stopped second-guessing things I'd already decided, because they didn't have the context to second-guess. They just did what they were built to do.
 
@@ -153,7 +153,7 @@ The work I'm doing now looks less like prompting and more like org design.
 - I write specs.
 - I define interfaces between specialists.
 - I curate context.
-- I codify recurring corrections into reusable skills so the fleet stays aligned with my taste without me having to be in the loop on every decision.
+- I codify recurring corrections into reusable **skills** so the fleet stays aligned with my taste without me having to be in the loop on every decision.
 
 The actual coding, the part I assumed would be the whole game, is the smallest part of how I spend my time. As a soon-to-be dad of two, that's exactly what I need.
 

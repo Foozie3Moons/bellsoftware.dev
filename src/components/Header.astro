@@ -13,6 +13,11 @@ const { active = null } = Astro.props;
       <a href="/writing" class:list={[{ active: active === 'writing' }]}>Writing</a>
       <a href="/about" class:list={[{ active: active === 'about' }]}>About</a>
       <a href="/rss.xml">RSS</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle theme" role="switch">
+        <span class="track">
+          <span class="thumb"></span>
+        </span>
+      </button>
     </nav>
   </div>
 </header>
@@ -51,4 +56,65 @@ const { active = null } = Astro.props;
   nav.site-nav a.active {
     color: var(--fg);
   }
+
+  #theme-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  .track {
+    display: block;
+    width: 36px;
+    height: 20px;
+    background: var(--border);
+    border-radius: 10px;
+    position: relative;
+    transition: background 150ms ease;
+  }
+
+  .thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--fg);
+    border-radius: 50%;
+    transition: transform 150ms ease;
+  }
+
+  :global([data-theme="dark"]) .track {
+    background: var(--muted);
+  }
+
+  :global([data-theme="dark"]) .thumb {
+    transform: translateX(16px);
+  }
 </style>
+
+<script>
+  const toggle = document.getElementById('theme-toggle');
+  const html = document.documentElement;
+
+  function getTheme() {
+    const stored = localStorage.getItem('theme');
+    if (stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function setTheme(theme: string) {
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }
+
+  setTheme(getTheme());
+
+  toggle?.addEventListener('click', () => {
+    const current = html.getAttribute('data-theme');
+    setTheme(current === 'dark' ? 'light' : 'dark');
+  });
+</script>
