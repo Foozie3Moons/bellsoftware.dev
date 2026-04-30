@@ -111,3 +111,27 @@
   border-top: 1px solid var(--border);
   margin: var(--space-12) 0;
 }
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.prose th {
+  font-weight: 600;
+  background: var(--code-bg);
+}
+
+.prose tr:last-child td {
+  border-bottom: none;
+}
