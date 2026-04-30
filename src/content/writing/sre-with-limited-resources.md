@@ -8,13 +8,13 @@ I've been working on **Site Reliability Engineering** (SRE) for a majority of my
 
 And indeed, SRE was rolled out at Getty during my tenure. It has fulfiled its promises on enhancing reliability, reducing incident rates, and reducing time to resolution. It has increased release cadence and confidence. It has been one of the single most important things to be implemented in my opinion, which is why I care so deeply about it.
 
-I've read the SRE Workbook cover to cover. The core concepts work and they make sense. But at a certain scale, things start to break down. Late nights chasing alerts that turned out to be noise. Tuning thresholds for weeks only to find they still don't correlate with actual user-facing issues. Burnout out on alerts that have nothing to action, especially middle of the night. Issues that fall through the cracks. I've noticed this is not a problem specific to my org. So what is the gap?
+I've read the [SRE Workbook](https://sre.google/workbook/table-of-contents/) cover to cover. The core concepts work and they make sense. But at a certain scale, things start to break down. Late nights chasing alerts that turned out to be noise. Tuning thresholds for weeks only to find they still don't correlate with actual user-facing issues. Burnout out on alerts that have nothing to action, especially middle of the night. Issues that fall through the cracks. I've noticed this is not a problem specific to my org. So what is the gap?
 
 The SRE Workbook is excellent. But its assumptions don't translate cleanly when the surface area you're responsible for exceeds the headcount available to cover it. When you have more services than SREs, the practices that work for Google's dedicated teams start to break down. This is what I've learned trying to make them work anyway.
 
 ## The Workbook's assumptions
 
-The Workbook's alerting guidance divides problems into categories:
+The Workbook's [alerting guidance](https://sre.google/workbook/alerting-on-slos/) divides problems into categories:
 
 | Category | Response |
 |----------|----------|
@@ -50,7 +50,7 @@ That's 300 latency SLOs to define and maintain. For error SLOs, you might have 5
 
 Low-traffic endpoints produce spiky, noisy data. A single slow request can spike your `p99` for hours. A batch job that runs once per day can skew your baseline. The data isn't wrong, but it's not stable enough to alert on.
 
-Tight thresholds on noisy data produce false positives. The SRE book acknowledges this problem for low-level infrastructure services. The same dynamic applies to low-traffic application endpoints.
+Tight thresholds on noisy data produce false positives. The SRE book [acknowledges this problem](https://sre.google/workbook/alerting-on-slos/#low-traffic-services-and-error-budget-alerting) for low-level infrastructure services. The same dynamic applies to low-traffic application endpoints.
 
 ### Alert fatigue loop
 
@@ -66,7 +66,7 @@ This creates single points of failure on experienced SRE practitioners. When the
 
 ### Burn rate reality check
 
-The Workbook's multi-window **burn rate** alerting is elegant in theory. Here's what it looks like in practice:
+The Workbook's [multi-window burn rate](https://sre.google/workbook/alerting-on-slos/#6-multiwindow-multi-burn-rate-alerts) alerting is elegant in theory. Here's what it looks like in practice:
 
 | SLI Error Rate | 1% | 5% | 10% | 25% | 50% | 100% |
 |----------------|-----|-----|-----|-----|-----|------|
@@ -77,13 +77,27 @@ The table shows time-to-alert for different error rates. At 1% and 5% error rate
 
 Tighter thresholds sound better. But they don't provide proportional value. A 1% error rate that takes hours to detect isn't necessarily worse than a 10% rate caught in minutes, if the 1% errors are transient and self-resolving. The obsession with catching everything early creates the noise that makes the system untrustworthy.
 
+### Low traffic breaks the math
+
+**Burn rates** depend on a fundamental assumption: enough requests to make the math meaningful. The formula is straightforward:
+
+```
+error_rate = errors / total_requests
+```
+
+If you're getting 10 requests per hour, a single error is a 10% error rate. Two errors and you're at 20%. The burn rate calculation amplifies this noise into alerts that don't reflect actual system health.
+
+Here's the problem: some of our lowest-traffic services are also the most critical. The purchase path handles fewer requests than the homepage, but every one of those requests represents revenue. A payment endpoint might process 50 transactions per hour during off-peak. Standard SLO math falls apart at that volume, but we can't just ignore it because it's "low traffic."
+
+The Workbook's [answer is synthetic traffic](https://sre.google/workbook/alerting-on-slos/#low-traffic-services-and-error-budget-alerting): simulate load to generate enough data points. I don't buy it. Synthetic traffic adds infrastructure complexity, doesn't reflect real user behavior, and creates its own failure modes. You're solving a measurement problem by adding more things that can break.
+
 ## What's worked
 
 Four adaptations have made the Workbook's model usable without Google-scale staffing.
 
 ### Cap latency SLO targets at 99%
 
-The Workbook mentions `p90` and `p99` as targets. I tried `p99.9`. The data was noise.
+The Workbook [mentions `p90` and `p99`](https://sre.google/workbook/implementing-slos/#slis-for-different-types-of-services) as targets. I tried `p99.9`. The data was noise.
 
 At typical traffic volumes, you don't have enough data points to make high-percentile calculations stable. A handful of outliers dominate the signal. Google's **Core Web Vitals** targets `p75`. Even they don't chase extreme percentiles for everything.
 
@@ -126,6 +140,22 @@ This is the one that prevents endless threshold tuning.
 Decide what percentage of users you're actually optimizing latency for. Not "as many as possible." A number. `p90`? `p95`? `p99`? This is a **business decision**, not a technical one. Product and engineering leadership need to own it together.
 
 Once you have that number, you can derive thresholds instead of tuning them. You're no longer in a rabbit hole asking "should this be `200ms` or `250ms`?" You're asking "what does `p95` actually look like for this endpoint, and is that acceptable?" The answer is either yes or no. If no, it's a feature priority conversation, not an alerting configuration problem.
+
+### Custom alerting for low-traffic critical paths
+
+For services where burn rate math breaks down but the business impact is high, we've moved to custom alerting that doesn't depend on statistical volume.
+
+Payment processing is the clearest example. We alert by payment type rather than aggregate error rate:
+
+| Payment Type | Alert Threshold | Rationale |
+|--------------|-----------------|-----------|
+| Credit card | Any 5xx in 5 min window | High volume, any errors notable |
+| PayPal | 2+ failures in 10 min | Lower volume, some transient failures expected |
+| Apple Pay | Any failure | Lowest volume, every transaction matters |
+
+This isn't SLO-based alerting. It's domain-aware alerting that reflects what actually matters to the business. A single Apple Pay failure might represent one of only 20 transactions that hour. Standard burn rates would never catch it, but it's still a customer who couldn't complete checkout.
+
+The tradeoff is maintenance cost. These custom alerts require domain knowledge to set up and tune. But for mission-critical, low-traffic paths, that cost is worth it. The alternative is either constant noise from oversensitive SLOs or blind spots on the most important transactions.
 
 ## Looking forward
 
