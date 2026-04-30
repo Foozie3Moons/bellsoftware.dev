@@ -53,6 +53,13 @@ code {
   max-width: var(--page-max);
   margin: 0 auto;
   padding: 0 var(--space-6);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page main {
+  flex: 1;
 }
 
 @media (max-width: 640px) {
