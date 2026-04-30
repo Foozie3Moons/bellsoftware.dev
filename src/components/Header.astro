@@ -1,0 +1,54 @@
+---
+interface Props {
+  active?: 'writing' | 'about' | null;
+}
+
+const { active = null } = Astro.props;
+---
+
+<header class="site">
+  <div class="row">
+    <a href="/" class="wordmark">bellsoftware</a>
+    <nav class="site-nav">
+      <a href="/writing" class:list={[{ active: active === 'writing' }]}>Writing</a>
+      <a href="/about" class:list={[{ active: active === 'about' }]}>About</a>
+      <a href="/rss.xml">RSS</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  header.site {
+    padding: var(--space-8) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header.site .row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+
+  .wordmark {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--fg);
+    letter-spacing: -0.01em;
+  }
+
+  nav.site-nav {
+    display: flex;
+    gap: var(--space-6);
+    font-size: var(--text-base);
+  }
+
+  nav.site-nav a {
+    color: var(--muted);
+  }
+
+  nav.site-nav a:hover,
+  nav.site-nav a.active {
+    color: var(--fg);
+  }
+</style>

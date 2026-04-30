@@ -1,0 +1,44 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site">
+  <div class="row">
+    <div>© {year} bellsoftware</div>
+    <nav>
+      <a href="/rss.xml">RSS</a>
+      <a href="https://github.com">GitHub</a>
+      <a href="mailto:hello@bellsoftware.dev">Email</a>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  footer.site {
+    padding: var(--space-12) 0 var(--space-16);
+    border-top: 1px solid var(--border);
+    font-size: var(--text-xs);
+    color: var(--muted);
+  }
+
+  footer.site .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+  }
+
+  footer.site nav {
+    display: flex;
+    gap: var(--space-6);
+  }
+
+  footer.site a {
+    color: var(--muted);
+  }
+
+  footer.site a:hover {
+    color: var(--fg);
+  }
+</style>

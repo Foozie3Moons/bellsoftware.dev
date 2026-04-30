@@ -1,0 +1,53 @@
+---
+import { formatLong, isoDate } from '../utils/format-date';
+
+interface Props {
+  title: string;
+  pubDate: Date;
+  readingTime: string;
+}
+
+const { title, pubDate, readingTime } = Astro.props;
+---
+
+<header class="article-header">
+  <h1>{title}</h1>
+  <div class="article-meta">
+    <time datetime={isoDate(pubDate)}>{formatLong(pubDate)}</time>
+    <span class="dot">·</span>
+    <span>{readingTime}</span>
+  </div>
+</header>
+
+<style>
+  .article-header {
+    margin-bottom: var(--space-16);
+  }
+
+  .article-header h1 {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.022em;
+    margin-bottom: var(--space-6);
+  }
+
+  @media (max-width: 640px) {
+    .article-header h1 {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  .article-meta {
+    display: flex;
+    gap: var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  .article-meta .dot {
+    color: var(--border);
+  }
+</style>

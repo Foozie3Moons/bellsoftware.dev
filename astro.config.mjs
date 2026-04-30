@@ -7,4 +7,13 @@ export default defineConfig({
   build: {
     format: 'directory',
   },
+  markdown: {
+    shikiConfig: {
+      themes: {
+        light: 'vitesse-light',
+        dark: 'vitesse-dark',
+      },
+      wrap: false,
+    },
+  },
 });

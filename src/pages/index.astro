@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
-import { formatShort, isoDate } from '../utils/format-date';
+import PostList from '../components/PostList.astro';
 
 const posts = (await getCollection('writing', ({ data }) => !data.draft))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
@@ -21,17 +21,7 @@ const posts = (await getCollection('writing', ({ data }) => !data.draft))
 
   <section class="writing">
     <div class="label">Recent writing</div>
-    <ul class="posts">
-      {posts.map((post) => (
-        <li class="post">
-          <time datetime={isoDate(post.data.pubDate)}>{formatShort(post.data.pubDate)}</time>
-          <div class="body">
-            <h3><a href={`/writing/${post.id}/`}>{post.data.title}</a></h3>
-            <p>{post.data.description}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <PostList posts={posts} headingLevel="h3" />
     <a href="/writing" class="archive-link">All writing&nbsp;</a>
   </section>
 </Layout>
@@ -87,56 +77,6 @@ const posts = (await getCollection('writing', ({ data }) => !data.draft))
     letter-spacing: 0.08em;
     color: var(--muted);
     margin-bottom: var(--space-12);
-  }
-
-  ul.posts {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-12);
-  }
-
-  li.post {
-    display: grid;
-    grid-template-columns: 100px 1fr;
-    gap: var(--space-6);
-    align-items: baseline;
-  }
-
-  @media (max-width: 640px) {
-    li.post {
-      grid-template-columns: 1fr;
-      gap: var(--space-2);
-    }
-  }
-
-  li.post time {
-    font-size: var(--text-xs);
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-    padding-top: 6px;
-  }
-
-  li.post .body h3 {
-    font-size: var(--text-xl);
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: -0.012em;
-    margin-bottom: var(--space-2);
-  }
-
-  li.post .body h3 a {
-    color: var(--fg);
-  }
-
-  li.post .body h3 a:hover {
-    color: var(--accent);
-  }
-
-  li.post .body p {
-    font-size: var(--text-base);
-    color: var(--muted);
-    line-height: 1.55;
-    max-width: 540px;
   }
 
   .archive-link {
