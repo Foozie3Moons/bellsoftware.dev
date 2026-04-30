@@ -1,12 +1,14 @@
 ---
-title: "Site Reliability Engineering with limited resources"
+title: "Site Reliability Engineering on a dime"
 description: "The SRE Workbook is excellent. Its assumptions don't always translate."
 pubDate: 2026-04-30
 ---
 
-I've been workign with SRE related The promise of SRE is compelling. Meaningful SLOs that reflect real user experience. Alerting that catches problems before customers notice. Error budgets that force conversations between reliability and velocity. I've read the SRE Workbook cover to cover. I've implemented pieces of it. The model makes sense.
+I've been working on Site Reliability Engineering (SRE) for a majority of my software engineering career and with that I've developed quite a few opinions over the years. The promise of SRE is compelling. Meaningful SLOs that reflect real user experience. Alerting that catches problems before customers notice. Error budgets that force conversations between reliability and velocity. 
 
-The lived experience has been different. I've spent late nights chasing alerts that turned out to be noise. I've tuned thresholds for weeks only to find they still don't correlate with actual user-facing issues. I've burned out on pager rotations where most of what woke me up didn't matter, and what did matter sometimes slipped through anyway. I can see this type of problem existing in many mid-size organisations, not just mine.
+And indeed, SRE was rolled out at Getty during my tenure. It has fulfiled its promises on enhancing reliability, reducing incident rates, and reducing time to resolution. It has increased release cadence and confidence. It has been one of the single most important things to be implemented in my opinion, which is why I care so deeply about it.
+
+I've read the SRE Workbook cover to cover. The core concepts work and they make sense. But at a certain scale, things start to break down. Late nights chasing alerts that turned out to be noise. Tuning thresholds for weeks only to find they still don't correlate with actual user-facing issues. Burnout out on alerts that have nothing to action, especially middle of the night. Issues that fall through the cracks. I've noticed this is not a problem specific to my org. So what is the gap?
 
 The SRE Workbook is excellent. But its assumptions don't translate cleanly when the surface area you're responsible for exceeds the headcount available to cover it. When you have more services than SREs, the practices that work for Google's dedicated teams start to break down. This is what I've learned trying to make them work anyway.
 
