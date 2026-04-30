@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The work isn't prompting — [Your Name]</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #fafaf7;
+      --fg: #1a1a1a;
+      --muted: #6b6b6b;
+      --border: #e5e5e0;
+      --accent: #c65d3f;
+      --accent-hover: #a84a2f;
+      --code-bg: #f2f2ec;
+      --selection: #f5d4c5;
+
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --space-16: 64px;
+      --space-24: 96px;
+      --space-32: 128px;
+
+      --content-max: 680px;
+      --page-max: 1280px;
+
+      --text-xs: 14px;
+      --text-base: 17px;
+      --text-lg: 21px;
+      --text-xl: 26px;
+      --text-2xl: 33px;
+      --text-3xl: 41px;
+      --text-4xl: 51px;
+
+      --prose-size: 18px;
+      --prose-leading: 1.7;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f0f0e;
+        --fg: #ececE7;
+        --muted: #888884;
+        --border: #2a2a28;
+        --accent: #e07856;
+        --accent-hover: #f08866;
+        --code-bg: #1a1a18;
+        --selection: #5a2e1f;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-size: var(--text-base);
+      line-height: 1.65;
+      font-feature-settings: 'cv11', 'ss01', 'ss03';
+    }
+
+    ::selection {
+      background: var(--selection);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color 120ms ease;
+    }
+
+    a:hover {
+      color: var(--accent-hover);
+    }
+
+    code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.9em;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .page {
+      max-width: var(--page-max);
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 0 var(--space-4);
+      }
+    }
+
+    /* Header */
+    header.site {
+      padding: var(--space-8) 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header.site .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-6);
+    }
+
+    .wordmark {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--fg);
+      letter-spacing: -0.01em;
+    }
+
+    nav.site {
+      display: flex;
+      gap: var(--space-6);
+      font-size: var(--text-base);
+    }
+
+    nav.site a {
+      color: var(--muted);
+    }
+
+    nav.site a:hover,
+    nav.site a.active {
+      color: var(--fg);
+    }
+
+    /* Article */
+    article {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: var(--space-16) 0 var(--space-24);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--muted);
+      margin-bottom: var(--space-12);
+      letter-spacing: 0.02em;
+    }
+
+    .back-link::before {
+      content: '←';
+      transition: transform 160ms ease;
+    }
+
+    .back-link:hover {
+      color: var(--fg);
+    }
+
+    .back-link:hover::before {
+      transform: translateX(-3px);
+    }
+
+    .article-header {
+      margin-bottom: var(--space-16);
+    }
+
+    .article-header h1 {
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.022em;
+      margin-bottom: var(--space-6);
+    }
+
+    @media (max-width: 640px) {
+      .article-header h1 {
+        font-size: var(--text-2xl);
+      }
+      article {
+        padding: var(--space-12) 0 var(--space-16);
+      }
+    }
+
+    .article-meta {
+      display: flex;
+      gap: var(--space-4);
+      font-size: var(--text-xs);
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.01em;
+    }
+
+    .article-meta .dot {
+      color: var(--border);
+    }
+
+    /* Prose */
+    .prose {
+      font-size: var(--prose-size);
+      line-height: var(--prose-leading);
+    }
+
+    .prose > * + * {
+      margin-top: var(--space-6);
+    }
+
+    .prose p {
+      color: var(--fg);
+    }
+
+    .prose strong {
+      font-weight: 600;
+    }
+
+    .prose em {
+      font-style: italic;
+    }
+
+    .prose a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    }
+
+    .prose a:hover {
+      text-decoration-color: var(--accent-hover);
+    }
+
+    .prose h2 {
+      font-size: var(--text-xl);
+      font-weight: 600;
+      letter-spacing: -0.014em;
+      line-height: 1.3;
+      margin-top: var(--space-12);
+    }
+
+    .prose h3 {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin-top: var(--space-8);
+    }
+
+    .prose blockquote {
+      border-left: 2px solid var(--accent);
+      padding-left: var(--space-6);
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .prose ul,
+    .prose ol {
+      padding-left: var(--space-6);
+    }
+
+    .prose li + li {
+      margin-top: var(--space-2);
+    }
+
+    .prose pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: var(--space-4) var(--space-6);
+      overflow-x: auto;
+      font-size: var(--text-xs);
+      line-height: 1.6;
+    }
+
+    .prose pre code {
+      background: none;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    .prose hr {
+      border: 0;
+      border-top: 1px solid var(--border);
+      margin: var(--space-12) 0;
+    }
+
+    /* Article footer */
+    .article-end {
+      margin-top: var(--space-16);
+      padding-top: var(--space-8);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: var(--text-xs);
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .article-end a {
+      color: var(--muted);
+    }
+
+    .article-end a:hover {
+      color: var(--fg);
+    }
+
+    /* Footer */
+    footer.site {
+      padding: var(--space-12) 0 var(--space-16);
+      border-top: 1px solid var(--border);
+      font-size: var(--text-xs);
+      color: var(--muted);
+    }
+
+    footer.site .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-6);
+      flex-wrap: wrap;
+    }
+
+    footer.site nav {
+      display: flex;
+      gap: var(--space-6);
+    }
+
+    footer.site a {
+      color: var(--muted);
+    }
+
+    footer.site a:hover {
+      color: var(--fg);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="site">
+      <div class="row">
+        <a href="/" class="wordmark">[Your Name]</a>
+        <nav class="site">
+          <a href="/writing" class="active">Writing</a>
+          <a href="/about">About</a>
+          <a href="/rss.xml">RSS</a>
+        </nav>
+      </div>
+    </header>
+
+    <article>
+      <a href="/writing" class="back-link">&nbsp;Writing</a>
+
+      <header class="article-header">
+        <h1>The work isn't prompting</h1>
+        <div class="article-meta">
+          <time datetime="2026-04-29">April 29, 2026</time>
+          <span class="dot">·</span>
+          <span>4 min read</span>
+        </div>
+      </header>
+
+      <div class="prose">
+        <p>I've been using agentic coding tools for a few months now, long enough to feel comfortable with how they work. Six weeks ago I set out to build a household AI assistant. I'd seen a lot online about OpenClaw and personal AI assistants, but I'm also very aware of the security issues it and others like it have had. So I decided to do what any developer with limited free time would do and build the whole thing myself from the ground up.</p>
+
+        <p>I assumed the move was the same one I'd been using: find a capable generalist agent and get good at prompting it. Give it good context, give it good instructions, get good code back. The work would be in the prompt.</p>
+
+        <p>That isn't how it played out.</p>
+
+        <p>The generalist worked, technically. It produced code. The code compiled. Some of it was even good. But the more I asked it to do, the less it felt like building software and the more it felt like managing someone who was trying very hard to do five jobs at once. Decisions in one part of the codebase contradicted decisions in another. Patterns I'd established got quietly relitigated. The output was always plausible, which made it worse, because plausible-but-wrong is harder to catch than obviously-wrong.</p>
+
+        <p>At one point I found 461 inline style calls across 74 files when the convention was CSS Modules. None were genuinely dynamic. Every single one was drift: the agent making locally reasonable decisions that accumulated into incoherence. The chat layout got reimplemented four times because no approach was locked. Some of this is on me. I was reviewing fast, trusting the fleet to hold the line on conventions it had already been told. The point is that "told once" doesn't hold. Conventions need machinery behind them, not just instructions.</p>
+
+        <p>The fix wasn't a single shift. It was iterative. Each failure mode got its own machinery. Week 3, I carved work into specialized agents with tight system prompts and narrow tool surfaces. One that only thinks about architecture. One that only writes specs. One that only does dashboard work. Each with their own constraints, their own scope. Week 4, I added dispatch logging so I could see what was happening. Week 5, I added hooks that mechanically block mistakes before they're written. When an agent tries to write a migration to the wrong directory, it gets stopped, not corrected after the fact.</p>
+
+        <p>The first time I ran the specialist setup I expected marginal improvement. What I got was a different category of output. The code was more consistent. The decisions stayed coherent across the codebase. The agents stopped second-guessing things I'd already decided, because they didn't have the context to second-guess. They just did what they were built to do.</p>
+
+        <p>What I didn't expect was how much of the work moved upstream. Specialists are only as good as the seams between them, and drawing those seams turns out to be most of the job. Where does the architect stop and the implementer start? What does the spec-writer hand off, and in what shape? Which decisions belong to me and which can I delegate? These are the same questions you ask when designing a team of humans, and the answers matter more, not less, when the team is made of agents.</p>
+
+        <p>The work I'm doing now looks less like prompting and more like org design. I write specs. I define interfaces between specialists. I curate context. I codify recurring corrections into reusable skills so the fleet stays aligned with my taste without me having to be in the loop on every decision. The actual coding, the part I assumed would be the whole game, is the smallest part of how I spend my time.</p>
+
+        <p>The role this rewards isn't prompt engineer. It's closer to tech lead for a team that doesn't exist: someone who decides what good looks like and encodes it well enough that other actors can execute against it. The skills that compound are the ones senior engineers already have. Systems thinking. Clear interfaces. Knowing what good looks like.</p>
+
+        <p>To be clear: these are the findings of a solo dev working on a personal project with limited free time. But the problems (drift, context rot, plausible-but-wrong output) aren't unique to solo work. Neither are the fixes. Six weeks and 93k lines later, this is what's working for me.</p>
+      </div>
+
+      <div class="article-end">
+        <a href="/writing">More writing</a>
+        <span>—</span>
+      </div>
+    </article>
+
+    <footer class="site">
+      <div class="row">
+        <div>© 2026 [Your Name]</div>
+        <nav>
+          <a href="/rss.xml">RSS</a>
+          <a href="https://github.com">GitHub</a>
+          <a href="mailto:hello@example.com">Email</a>
+        </nav>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
