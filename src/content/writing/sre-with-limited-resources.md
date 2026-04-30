@@ -64,3 +64,53 @@ The Workbook's multi-window burn rate alerting is elegant in theory. Here's what
 The table shows time-to-alert for different error rates. At 1% and 5% error rates, the fast burn window doesn't fire at all within the alerting window. You're relying entirely on slow burn detection.
 
 Tighter thresholds sound better. But they don't provide proportional value. A 1% error rate that takes hours to detect isn't necessarily worse than a 10% rate caught in minutes, if the 1% errors are transient and self-resolving. The obsession with catching everything early creates the noise that makes the system untrustworthy.
+
+## What's worked
+
+Four adaptations have made the Workbook's model usable without Google-scale staffing.
+
+### Cap latency SLO targets at 99%
+
+The Workbook mentions 90% and 99% as targets. I tried 99.9%. The data was noise.
+
+At typical traffic volumes, you don't have enough data points to make high-percentile calculations stable. A handful of outliers dominate the signal. Google's Core Web Vitals targets 75%. Even they don't chase extreme percentiles for everything.
+
+Stay at 99% or below. The reliability of your data matters more than the precision of your target.
+
+### Standardize latency buckets
+
+Predefined histogram buckets across all services:
+
+- 5ms
+- 10ms
+- 25ms
+- 50ms
+- 100ms
+- 250ms
+- 500ms
+- 1s
+- 2.5s
+- 5s
+
+This gives you a consistent baseline for comparison. When every service uses the same buckets, you can reason about latency across services without translating between different scales. New services get sensible defaults. Tuning conversations start from a shared frame.
+
+### Priority classification
+
+Not everything needs the same alerting urgency. The Workbook's tiers are sound:
+
+| Tier | Response |
+|------|----------|
+| **Critical** | Page immediately |
+| **High Fast** | Page within minutes |
+| **High Slow** | Page within hours |
+| **Low** | Ticket, don't page |
+
+The mistake is applying them uniformly. I apply them selectively based on actual business impact. A checkout service gets Critical. An internal admin dashboard gets Low. The classification reflects what actually matters, not what the SLO math says should matter.
+
+### Business alignment on percentiles
+
+This is the one that prevents endless threshold tuning.
+
+Decide what percentage of users you're actually optimizing latency for. Not "as many as possible." A number. 90%? 95%? 99%? This is a business decision, not a technical one. Product and engineering leadership need to own it together.
+
+Once you have that number, you can derive thresholds instead of tuning them. You're no longer in a rabbit hole asking "should this be 200ms or 250ms?" You're asking "what does p95 actually look like for this endpoint, and is that acceptable?" The answer is either yes or no. If no, it's a feature priority conversation, not an alerting configuration problem.
