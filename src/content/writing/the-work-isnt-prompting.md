@@ -109,7 +109,12 @@ Before this I was flying blind. The only way to gauge whether the fleet was work
 
 I added `hooks` that block mistakes before they're written. Here's one that stops migrations from landing in the wrong directory.
 
-The codebase has two directories that look like migration directories: `src/backend/core/database/migrations/` (test fixtures) and `migrations/orchestrator/` (the real one). The Nest app only reads from the second. An agent sees the first, thinks "that's where migrations go," writes the file, runs the tests. Tests pass because the fixtures work fine. Then Nest crashes at boot: `no such table`.
+The codebase has two directories that look like migration directories:
+
+- `src/backend/core/database/migrations/` (test fixtures)
+- `migrations/orchestrator/` (the real one)
+
+The Nest app only reads from the second. An agent sees the first, thinks "that's where migrations go," writes the file, runs the tests. Tests pass because the fixtures work fine. Then Nest crashes at boot: `no such table`.
 
 ```bash
 # Block writes to *.sql under src/backend/core/database/migrations/
