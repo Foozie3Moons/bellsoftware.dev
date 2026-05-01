@@ -160,8 +160,4 @@ The work I'm doing now looks less like prompting and more like org design.
 - I curate context.
 - I codify recurring corrections into reusable **skills** so the fleet stays aligned with my taste without me having to be in the loop on every decision.
 
-The actual coding, the part I assumed would be the whole game, is the smallest part of how I spend my time. As a soon-to-be dad of two, that's exactly what I need.
-
-The role this rewards isn't prompt engineer. It's someone who knows how to design and implement complex systems but lacks the time to do it all end-to-end. The agents give me leverage. I decide what good looks like, encode it well enough that the fleet can execute against it, and ship what I couldn't ship alone. The work is familiar. Systems thinking. Clear interfaces. Knowing what good looks like.
-
-Six weeks and 93k lines later, this is what's working. The problems aren't unique to solo work. Neither are the fixes.
+Six weeks and 93k lines later, the work that matters most is upstream of the code: specs, interfaces between specialists, context curation. The actual prompting is the smallest part. As a soon-to-be dad of two, that's exactly what I need.
