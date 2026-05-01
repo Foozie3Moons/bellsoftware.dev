@@ -10,7 +10,9 @@ And indeed, SRE was rolled out at Getty during my tenure. It has fulfiled its pr
 
 I've read the [SRE Workbook](https://sre.google/workbook/table-of-contents/) cover to cover. The core concepts work and they make sense. But at a certain scale, things start to break down. Late nights chasing alerts that turned out to be noise. Tuning thresholds for weeks only to find they still don't correlate with actual user-facing issues. Burnout out on alerts that have nothing to action, especially middle of the night. Issues that fall through the cracks. I've noticed this is not a problem specific to my org. So what is the gap?
 
-The SRE Workbook is excellent. But its assumptions don't translate cleanly when the surface area you're responsible for exceeds the headcount available to cover it. When you have more services than SREs, the practices that work for Google's dedicated teams start to break down. This is what I've learned trying to make them work anyway.
+The SRE Workbook is excellent. But its assumptions don't translate cleanly when the surface area you're responsible for exceeds the headcount available to cover it. At smaller scale, the practices that work for Google's dedicated teams start to break down.
+
+I'm not the only one who's noticed. A [second edition](https://www.oreilly.com/library/view/site-reliability-engineering/9798341607675/) is due October 2026, explicitly addressing applicability beyond Google-scale. But in the meantime, this is what I've learned trying to make the first edition work anyway.
 
 ## The Workbook's assumptions
 
@@ -106,17 +108,9 @@ Stay at `p99` or below. The reliability of your data matters more than the preci
 ### Standardize latency buckets
 
 Predefined histogram buckets across all services:
-
-- `5ms`
-- `10ms`
-- `25ms`
-- `50ms`
-- `100ms`
-- `250ms`
-- `500ms`
-- `1s`
-- `2.5s`
-- `5s`
+```
+[`5ms`, `10ms`, `25ms`, `50ms`, `100ms`, `250ms`, `500ms`, `1s`, `2.5s`, `5s`]
+```
 
 This gives you a consistent baseline for comparison. When every service uses the same buckets, you can reason about latency across services without translating between different scales. New services get sensible defaults. Tuning conversations start from a shared frame.
 
@@ -145,15 +139,15 @@ Once you have that number, you can derive thresholds instead of tuning them. You
 
 For services where burn rate math breaks down but the business impact is high, we've moved to custom alerting that doesn't depend on statistical volume.
 
-Payment processing is the clearest example. We alert by payment type rather than aggregate error rate:
+Payment processing is the clearest example. Rather than aggregate error rates, we alert by payment method with thresholds scaled to volume:
 
-| Payment Type | Alert Threshold | Rationale |
-|--------------|-----------------|-----------|
-| Credit card | Any 5xx in 5 min window | High volume, any errors notable |
-| PayPal | 2+ failures in 10 min | Lower volume, some transient failures expected |
-| Apple Pay | Any failure | Lowest volume, every transaction matters |
+| Volume | Threshold |
+|--------|-----------|
+| High | Tighter windows, error counts |
+| Medium | Wider windows, allow transients |
+| Low | Any failure pages |
 
-This isn't SLO-based alerting. It's domain-aware alerting that reflects what actually matters to the business. A single Apple Pay failure might represent one of only 20 transactions that hour. Standard burn rates would never catch it, but it's still a customer who couldn't complete checkout.
+The principle: lower volume means each failure represents a larger share of transactions. A single failure on your lowest-volume payment method might be 5% of that hour's traffic. Standard burn rates would never catch it.
 
 The tradeoff is maintenance cost. These custom alerts require domain knowledge to set up and tune. But for mission-critical, low-traffic paths, that cost is worth it. The alternative is either constant noise from oversensitive SLOs or blind spots on the most important transactions.
 
