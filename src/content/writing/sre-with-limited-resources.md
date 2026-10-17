@@ -7,7 +7,7 @@ draft: true
 
 I've worked on site reliability engineering (SRE) for most of my career, and I've developed quite a few opinions along the way. The promise of SRE is compelling: meaningful SLOs that reflect real user experience, alerting that catches problems before customers notice, and error budgets that force conversations between reliability and velocity.
 
-SRE was rolled out at Getty during my tenure, and it has delivered on its promises. Reliability is better, incidents are fewer, and they get resolved faster. Releases are more frequent and more confident. In my opinion it's one of the most important things we've implemented, which is why I care about it so much.
+SRE was rolled out at the large multinational I work for during my tenure, and it has delivered on its promises. Reliability is better, incidents are fewer, and they get resolved faster. Releases are more frequent and more confident. In my opinion it's one of the most important things we've implemented, which is why I care about it so much.
 
 I've read the [SRE Workbook](https://sre.google/workbook/table-of-contents/) cover to cover. The core concepts work and they make sense. At a certain scale though, things start to break down. I've had late nights chasing alerts that turned out to be noise. I've tuned thresholds for weeks only to find they still didn't line up with real user-facing issues. I've burned out on alerts with nothing to action (especially in the middle of the night) and watched issues fall through the cracks. This isn't specific to my org either.
 
@@ -37,7 +37,7 @@ Six failure modes show up again and again. Each one ties back to one of those tw
 
 We hit most of them early. Looking back at the first alerts we set up:
 
-> A lot of the initial alerts set up when Getty started its SRE work were bad SLOs. It took a while to figure out a standard for latency SLOs specifically
+> A lot of the initial alerts set up when [we] started [our] SRE work were bad SLOs. It took a while to figure out a standard for latency SLOs specifically
 
 > they often had thresholds that were very low and would never alert under a SLO burn rate calculation, had ad-hoc buckets which made it impossible to maintain, or were too spikey to have a meaningful threshold
 
