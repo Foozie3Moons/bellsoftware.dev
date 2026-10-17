@@ -16,7 +16,10 @@ const Heading = headingLevel;
 <li class="post">
   <time datetime={isoDate(post.data.pubDate)}>{formatShort(post.data.pubDate)}</time>
   <div class="body">
-    <Heading><a href={`/writing/${post.id}/`}>{post.data.title}</a></Heading>
+    <Heading>
+      <a href={`/writing/${post.id}/`}>{post.data.title}</a>
+      {post.data.draft && <span class="draft-tag">Draft</span>}
+    </Heading>
     <p>{post.data.description}</p>
   </div>
 </li>
@@ -60,6 +63,20 @@ const Heading = headingLevel;
   .body :global(h2 a:hover),
   .body :global(h3 a:hover) {
     color: var(--accent);
+  }
+
+  .draft-tag {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: var(--space-2);
+    padding: 2px var(--space-2);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
   }
 
   .body p {

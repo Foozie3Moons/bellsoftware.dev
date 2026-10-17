@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { showDrafts } from '../utils/drafts';
 
 interface Props {
   title: string;
@@ -27,6 +28,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).toString();
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {showDrafts && <meta name="robots" content="noindex, nofollow" />}
     <link rel="canonical" href={canonical} />
     <link rel="alternate" type="application/rss+xml" title="bellsoftware" href="/rss.xml" />
     <title>{title}</title>

@@ -4,9 +4,10 @@ import Layout from '../../layouts/Layout.astro';
 import ArticleHeader from '../../components/ArticleHeader.astro';
 import Prose from '../../components/Prose.astro';
 import { readingTime } from '../../utils/reading-time';
+import { isVisible } from '../../utils/drafts';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('writing', ({ data }) => !data.draft);
+  const posts = await getCollection('writing', isVisible);
   return posts.map((post) => ({
     params: { slug: post.id },
     props: { post },
@@ -26,6 +27,12 @@ const minutes = readingTime(post.body ?? '');
       </svg>
       Writing
     </a>
+
+    {post.data.draft && (
+      <p class="draft-banner" role="note">
+        Draft preview. This post isn't published yet.
+      </p>
+    )}
 
     <ArticleHeader title={post.data.title} pubDate={post.data.pubDate} readingTime={minutes} />
 
@@ -73,6 +80,16 @@ const minutes = readingTime(post.body ?? '');
 
   .back-link:hover svg {
     transform: translateX(-3px);
+  }
+
+  .draft-banner {
+    font-size: var(--text-xs);
+    color: var(--fg-strong);
+    background: var(--code-bg);
+    border-left: 3px solid var(--accent);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-8);
+    letter-spacing: 0.01em;
   }
 
   .article-end {
