@@ -2,17 +2,18 @@
 title: "Site Reliability Engineering on a dime"
 description: "The SRE Workbook is excellent. Its assumptions don't always translate."
 pubDate: 2026-04-30
+draft: true
 ---
 
-I've been working on **Site Reliability Engineering** (SRE) for a majority of my software engineering career and with that I've developed quite a few opinions over the years. The promise of SRE is compelling. Meaningful **SLOs** that reflect real user experience. Alerting that catches problems before customers notice. **Error budgets** that force conversations between reliability and velocity. 
+I've worked on site reliability engineering (SRE) for most of my career, and I've developed quite a few opinions along the way. The promise of SRE is compelling: meaningful SLOs that reflect real user experience, alerting that catches problems before customers notice, and error budgets that force conversations between reliability and velocity.
 
-And indeed, SRE was rolled out at Getty during my tenure. It has fulfiled its promises on enhancing reliability, reducing incident rates, and reducing time to resolution. It has increased release cadence and confidence. It has been one of the single most important things to be implemented in my opinion, which is why I care so deeply about it.
+SRE was rolled out at Getty during my tenure, and it has delivered on its promises. Reliability is better, incidents are fewer, and they get resolved faster. Releases are more frequent and more confident. In my opinion it's one of the most important things we've implemented, which is why I care about it so much.
 
-I've read the [SRE Workbook](https://sre.google/workbook/table-of-contents/) cover to cover. The core concepts work and they make sense. But at a certain scale, things start to break down. Late nights chasing alerts that turned out to be noise. Tuning thresholds for weeks only to find they still don't correlate with actual user-facing issues. Burnout out on alerts that have nothing to action, especially middle of the night. Issues that fall through the cracks. I've noticed this is not a problem specific to my org. So what is the gap?
+I've read the [SRE Workbook](https://sre.google/workbook/table-of-contents/) cover to cover. The core concepts work and they make sense. At a certain scale though, things start to break down. I've had late nights chasing alerts that turned out to be noise. I've tuned thresholds for weeks only to find they still didn't line up with real user-facing issues. I've burned out on alerts with nothing to action (especially in the middle of the night) and watched issues fall through the cracks. This isn't specific to my org either.
 
-The SRE Workbook is excellent. But its assumptions don't translate cleanly when the surface area you're responsible for exceeds the headcount available to cover it. At smaller scale, the practices that work for Google's dedicated teams start to break down.
+The Workbook is excellent, but its assumptions don't translate cleanly when a team's surface area outgrows the headcount available to cover it. Practices that work for Google's dedicated teams start to fail at smaller scale.
 
-I'm not the only one who's noticed. A [second edition](https://www.oreilly.com/library/view/site-reliability-engineering/9798341607675/) is due October 2026, explicitly addressing applicability beyond Google-scale. But in the meantime, this is what I've learned trying to make the first edition work anyway.
+A [second edition](https://www.oreilly.com/library/view/site-reliability-engineering/9798341607675/), scheduled for October 2026, explicitly addresses how SRE applies beyond Google's scale. This post is what I've learned trying to make the first edition work in the meantime.
 
 ## The Workbook's assumptions
 
@@ -26,19 +27,19 @@ The Workbook's [alerting guidance](https://sre.google/workbook/alerting-on-slos/
 | **Low** | Ticket, don't page |
 | **No SLO** | Don't alert at all |
 
-For latency, it recommends tracking both `p90` and `p99` thresholds so you catch both broad degradations and tail latency spikes.
+For latency, it recommends tracking both `p90` and `p99` thresholds so a team catches both broad slowdowns and tail latency spikes.
 
-This is sound advice. It also assumes two things: that you have **proportional staffing** to handle alerts at each tier, and that your traffic volume produces enough data for those percentile calculations to be statistically meaningful. When those assumptions hold, the model works. When they don't, you get either **alert fatigue** or **blind spots**.
+This is sound advice. It also assumes two things. The first is staffing in proportion to the alerts at each tier. The second is enough traffic for those percentile calculations to be statistically meaningful. When those assumptions hold, the model works. When they don't, the result is alert fatigue or blind spots.
 
 ## Where it breaks
 
-Four failure modes show up repeatedly. Each one connects back to the staffing assumption.
+Six failure modes show up again and again. Each one ties back to one of those two assumptions.
 
 ### Latency SLO cardinality
 
-Error SLOs scale well. One per service, maybe one per critical endpoint. Errors are binary and don't need tuning.
+Error SLOs scale well. A team needs one per service, maybe one per critical endpoint. Errors are binary and don't need tuning.
 
-Latency is different. Controller actions vary wildly in execution time. A dashboard index that renders in `50ms` shares a codebase with a report export that legitimately takes `8 seconds`. One threshold doesn't fit both. So you need multiple latency SLOs per service, each with its own baseline, each requiring individual tuning.
+Latency is different. Controller actions vary wildly in execution time. A dashboard index that renders in `50ms` shares a codebase with a report export that legitimately takes `8 seconds`. One threshold doesn't fit both. So each service needs several latency SLOs, each with its own baseline and its own tuning.
 
 The math:
 
@@ -50,13 +51,13 @@ That's 300 latency SLOs to define and maintain. For error SLOs, you might have 5
 
 ### Unreliable high-percentile data
 
-Low-traffic endpoints produce spiky, noisy data. A single slow request can spike your `p99` for hours. A batch job that runs once per day can skew your baseline. The data isn't wrong, but it's not stable enough to alert on.
+Low-traffic endpoints produce spiky, noisy data. A single slow request can spike the `p99` for hours. A batch job that runs once per day can skew your baseline. The data isn't wrong, but it's not stable enough to alert on.
 
 Tight thresholds on noisy data produce false positives. The SRE book [acknowledges this problem](https://sre.google/workbook/alerting-on-slos/#low-traffic-services-and-error-budget-alerting) for low-level infrastructure services. The same dynamic applies to low-traffic application endpoints.
 
 ### Alert fatigue loop
 
-False positives erode trust. Engineers stop treating alerts as urgent. Real alerts get ignored or actioned slowly. Response time degrades. Incidents that should have been caught early become customer-facing outages.
+False positives erode trust, so engineers stop treating alerts as urgent. Real alerts get ignored or handled slowly, and response times degrade. Incidents that should have been caught early become customer-facing outages.
 
 The Workbook warns about this. But the structure it recommends contributes to the problem when you can't staff proportionally. More SLOs means more alerts means more noise means less trust.
 
@@ -68,51 +69,51 @@ This creates single points of failure on experienced SRE practitioners. When the
 
 ### Burn rate reality check
 
-The Workbook's [multi-window burn rate](https://sre.google/workbook/alerting-on-slos/#6-multiwindow-multi-burn-rate-alerts) alerting is elegant in theory. Here's what it looks like in practice:
+The Workbook's [multi-window burn rate](https://sre.google/workbook/alerting-on-slos/#6-multiwindow-multi-burn-rate-alerts) alerting looks good on paper. This is what it looks like in practice:
 
 | SLI Error Rate | 1% | 5% | 10% | 25% | 50% | 100% |
 |----------------|-----|-----|-----|-----|-----|------|
 | Fast Burn | - | - | 2.3h | 21m | 11m | 6m |
 | Slow Burn | - | 4.8h | 2.4h | 58m | 29m | 15m |
 
-The table shows time-to-alert for different error rates. At 1% and 5% error rates, the fast burn window doesn't fire at all within the alerting window. You're relying entirely on slow burn detection.
+The table shows time-to-alert for different error rates. At 1% and 5% error rates, the fast burn window doesn't fire at all within the alerting window. Detection relies entirely on the slow burn window.
 
-Tighter thresholds sound better. But they don't provide proportional value. A 1% error rate that takes hours to detect isn't necessarily worse than a 10% rate caught in minutes, if the 1% errors are transient and self-resolving. The obsession with catching everything early creates the noise that makes the system untrustworthy.
+Tighter thresholds sound better, but they don't add proportional value. A 1% error rate that takes hours to detect isn't necessarily worse than a 10% rate caught in minutes, if the 1% errors are transient and self-resolving. The obsession with catching everything early creates the noise that makes the system untrustworthy.
 
 ### Low traffic breaks the math
 
-**Burn rates** depend on a fundamental assumption: enough requests to make the math meaningful. The formula is straightforward:
+Burn rates depend on a fundamental assumption: enough requests to make the math meaningful. The formula is straightforward:
 
 ```
 error_rate = errors / total_requests
 ```
 
-If you're getting 10 requests per hour, a single error is a 10% error rate. Two errors and you're at 20%. The burn rate calculation amplifies this noise into alerts that don't reflect actual system health.
+At 10 requests per hour, a single error is a 10% error rate. Two errors and you're at 20%. The burn rate calculation amplifies this noise into alerts that don't reflect actual system health.
 
-Here's the problem: some of our lowest-traffic services are also the most critical. The purchase path handles fewer requests than the homepage, but every one of those requests represents revenue. A payment endpoint might process 50 transactions per hour during off-peak. Standard SLO math falls apart at that volume, but we can't just ignore it because it's "low traffic."
+Some of our lowest-traffic services are also the most critical. The purchase path handles fewer requests than the homepage, but every one of those requests represents revenue. A payment endpoint might process 50 transactions per hour during off-peak. Standard SLO math falls apart at that volume, but we can't just ignore it because it's "low traffic."
 
-The Workbook's [answer is synthetic traffic](https://sre.google/workbook/alerting-on-slos/#low-traffic-services-and-error-budget-alerting): simulate load to generate enough data points. I don't buy it. Synthetic traffic adds infrastructure complexity, doesn't reflect real user behavior, and creates its own failure modes. You're solving a measurement problem by adding more things that can break.
+The Workbook's [answer is synthetic traffic](https://sre.google/workbook/alerting-on-slos/#low-traffic-services-and-error-budget-alerting): simulate load to generate enough data points. I don't buy it. Synthetic traffic adds infrastructure complexity, doesn't reflect real user behavior, and creates its own failure modes. It solves a measurement problem by adding more things that can break.
 
 ## What's worked
 
-Four adaptations have made the Workbook's model usable without Google-scale staffing.
+Five adaptations have made the Workbook's model usable without Google-scale staffing.
 
 ### Cap latency SLO targets at 99%
 
 The Workbook [mentions `p90` and `p99`](https://sre.google/workbook/implementing-slos/#slis-for-different-types-of-services) as targets. I tried `p99.9`. The data was noise.
 
-At typical traffic volumes, you don't have enough data points to make high-percentile calculations stable. A handful of outliers dominate the signal. Google's **Core Web Vitals** targets `p75`. Even they don't chase extreme percentiles for everything.
+At typical traffic volumes there aren't enough data points to make high-percentile calculations stable. A handful of outliers dominate the signal. Google's Core Web Vitals targets `p75`. Even they don't chase extreme percentiles for everything.
 
-Stay at `p99` or below. The reliability of your data matters more than the precision of your target.
+I stay at `p99` or below. Reliable data matters more than a precise target.
 
 ### Standardize latency buckets
 
 Predefined histogram buckets across all services:
 ```
-[`5ms`, `10ms`, `25ms`, `50ms`, `100ms`, `250ms`, `500ms`, `1s`, `2.5s`, `5s`]
+[5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s]
 ```
 
-This gives you a consistent baseline for comparison. When every service uses the same buckets, you can reason about latency across services without translating between different scales. New services get sensible defaults. Tuning conversations start from a shared frame.
+This gives a consistent baseline for comparison. When every service uses the same buckets, latency can be compared across services without translating between scales. New services get sensible defaults. Tuning conversations start from a shared frame.
 
 ### Priority classification
 
@@ -131,9 +132,9 @@ The mistake is applying them uniformly. I apply them selectively based on actual
 
 This is the one that prevents endless threshold tuning.
 
-Decide what percentage of users you're actually optimizing latency for. Not "as many as possible." A number. `p90`? `p95`? `p99`? This is a **business decision**, not a technical one. Product and engineering leadership need to own it together.
+Decide what percentage of users to optimize latency for, as an actual number (`p90`, `p95`, or `p99`) rather than "as many as possible." That's a business decision. Product and engineering leadership need to own it together.
 
-Once you have that number, you can derive thresholds instead of tuning them. You're no longer in a rabbit hole asking "should this be `200ms` or `250ms`?" You're asking "what does `p95` actually look like for this endpoint, and is that acceptable?" The answer is either yes or no. If no, it's a feature priority conversation, not an alerting configuration problem.
+With that number, thresholds can be derived instead of tuned. The question stops being "should this be 200ms or 250ms?" and becomes "what does `p95` look like for this endpoint, and is that acceptable?" The answer is yes or no. If it's no, that's a feature priority conversation.
 
 ### Custom alerting for low-traffic critical paths
 
@@ -147,17 +148,17 @@ Payment processing is the clearest example. Rather than aggregate error rates, w
 | Medium | Wider windows, allow transients |
 | Low | Any failure pages |
 
-The principle: lower volume means each failure represents a larger share of transactions. A single failure on your lowest-volume payment method might be 5% of that hour's traffic. Standard burn rates would never catch it.
+Lower volume means each failure represents a larger share of transactions. A single failure on the lowest-volume payment method might be 5% of that hour's traffic. Standard burn rates would never catch it.
 
 The tradeoff is maintenance cost. These custom alerts require domain knowledge to set up and tune. But for mission-critical, low-traffic paths, that cost is worth it. The alternative is either constant noise from oversensitive SLOs or blind spots on the most important transactions.
 
 ## Looking forward
 
-The problem isn't tooling. We have `Thanos`, `Splunk`, `PagerDuty`, `Grafana`. The instrumentation exists. The problem is **human bandwidth**.
+Tooling isn't the problem. We have Thanos, Splunk, PagerDuty, and Grafana, and the instrumentation exists. The problem is human bandwidth.
 
 Tuning SLOs requires judgment. Triaging alerts requires context. Maintaining thresholds requires ongoing calibration. This work scales with surface area, not headcount. More services means more manual analysis, and there's a ceiling on how much of that any team can absorb.
 
-I've been thinking about where AI fits here. Not shipped products. Early-stage ideas about what might actually help.
+I've been thinking about where AI fits here. These are early-stage ideas, not shipped products.
 
 ### SLO Auditor
 
@@ -168,11 +169,11 @@ An agent that queries actual infrastructure and answers questions humans current
 - What services are emitting metrics but have no SLO configured?
 - Which burn rate windows are producing alerts that never correlate with real incidents?
 
-The work here isn't technically complex. It's analysis across `Thanos`, `Splunk`, and `PagerDuty` data. But it requires someone with context to sit down and do it. An agent that can query across these systems and surface patterns would automate the analysis currently bottlenecked on SMEs.
+The work isn't technically complex. It's analysis across Thanos, Splunk, and PagerDuty data, but it needs someone with context to sit down and do it. An agent that can query across these systems and surface patterns would automate the analysis currently bottlenecked on SMEs.
 
 ### Triage Agent
 
-On-call engineer gets paged. Before they can even think about the problem, they need context:
+When an on-call engineer gets paged, they need context before they can even think about the problem:
 
 1. Recent deploys to the affected service
 2. Error patterns in logs
@@ -180,7 +181,7 @@ On-call engineer gets paged. Before they can even think about the problem, they 
 4. Service ownership and runbook location
 5. Related alerts from the same timeframe
 
-Assembling this takes **15-30 minutes**. An agent that pulls this automatically cuts the context-gathering phase to **seconds**. The value compounds as deploy velocity increases. More deploys means more potential causes means more time spent on context assembly.
+Assembling this takes 15 to 30 minutes. An agent that pulls it automatically would cut that to seconds. The value compounds as deploy velocity increases. More deploys means more potential causes means more time spent on context assembly.
 
 ```
 Alert fires
@@ -192,14 +193,14 @@ Engineer starts with full context
 
 ### Alert Mediator
 
-This sits between the alerting system and `PagerDuty`:
+This sits between the alerting system and PagerDuty:
 
-1. Alert fires from `Prometheus`/`Thanos`
+1. Alert fires from Prometheus or Thanos
 2. Agent evaluates: real signal or noise?
 3. If real or uncertain: page
 4. If noise: create ticket to fix the threshold, suppress the page
 
-The key insight is that noise has a cost. Every false positive erodes trust, burns on-call attention, and contributes to alert fatigue. Currently, humans absorb that cost. An agent that filters noise and creates actionable work items to fix the underlying threshold problems shifts that cost away from human attention.
+Noise has a cost. Every false positive erodes trust, burns on-call attention, and contributes to alert fatigue. Currently, humans absorb that cost. An agent that filters noise and creates actionable work items to fix the underlying threshold problems shifts that cost away from human attention.
 
 ### The compound effect
 
@@ -217,7 +218,7 @@ On-call only sees real problems
 Trust in alerting increases
 ```
 
-I'm not claiming this is solved. The failure modes are obvious: an agent that suppresses real alerts is worse than noise. The judgment calls are hard. But the direction is clear. The bottleneck on SRE practice at scale isn't tooling or methodology. It's human analysis capacity. That's exactly what AI systems should be good at augmenting.
+This isn't solved. The obvious failure mode is an agent that suppresses real alerts, which is worse than noise, and the judgment calls are hard. The bottleneck on SRE at scale is human analysis capacity though, and that's what AI should be good at augmenting.
 
 ---
 
