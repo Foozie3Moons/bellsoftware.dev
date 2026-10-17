@@ -56,7 +56,9 @@ Body in Markdown. Code fences are highlighted by Shiki at build time.
 
 The schema is enforced by Zod in `src/content.config.ts`. Missing or malformed frontmatter fails the build.
 
-Drafts (`draft: true`) are excluded from the homepage, the writing index, the RSS feed, and route generation.
+Drafts (`draft: true`) are excluded from production builds: the homepage, the writing index, the RSS feed, and route generation.
+
+Preview builds include them. Any Workers Builds branch other than `main` (detected via `WORKERS_CI_BRANCH`), `pnpm dev`, and `SHOW_DRAFTS=true pnpm build` render drafts with a "Draft" tag in lists and a banner on the post. Preview builds also add `noindex, nofollow` to every page. The RSS feed never includes drafts.
 
 ## Design tokens
 
