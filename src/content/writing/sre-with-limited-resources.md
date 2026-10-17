@@ -197,7 +197,7 @@ When an on-call engineer gets paged, they need context before they can even thin
 
 Assembling this takes 15 to 30 minutes. An agent that pulls it automatically would cut that to seconds. The value compounds as deploy velocity increases. More deploys means more potential causes means more time spent on context assembly.
 
-A colleague has since built a version of this. Since late August it has polled PagerDuty for new incidents, investigated each one read-only through Splunk, and written up what it found, unattended. Several of the numbers in this post come from those write-ups.
+A colleague has a Claude skill that does part of this. During their on-call shifts it polls PagerDuty for new incidents, investigates each one read-only through Splunk, and writes up what it found. Several of the numbers in this post come from the team's archive of on-call investigations.
 
 ```
 Alert fires
@@ -218,7 +218,7 @@ This sits between the alerting system and PagerDuty:
 
 Noise has a cost. Every false positive erodes trust, burns on-call attention, and contributes to alert fatigue. Currently, humans absorb that cost. An agent that filters noise and creates actionable work items to fix the underlying threshold problems shifts that cost away from human attention.
 
-The triage write-ups make the case for this one too. One threshold review was recommended by four separate investigations and still hadn't been actioned.
+The investigation archive makes the case for this one too. One threshold review was recommended by four separate investigations and still hadn't been actioned.
 
 ### The compound effect
 
