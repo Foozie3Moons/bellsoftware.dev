@@ -35,6 +35,12 @@ This is sound advice. It also assumes two things. The first is staffing in propo
 
 Six failure modes show up again and again. Each one ties back to one of those two assumptions.
 
+We hit most of them early. Looking back at the first alerts we set up:
+
+> A lot of the initial alerts set up when Getty started its SRE work were bad SLOs. It took a while to figure out a standard for latency SLOs specifically
+
+> they often had thresholds that were very low and would never alert under a SLO burn rate calculation, had ad-hoc buckets which made it impossible to maintain, or were too spikey to have a meaningful threshold
+
 ### Latency SLO cardinality
 
 Error SLOs scale well. A team needs one per service, maybe one per critical endpoint. Errors are binary and don't need tuning.
@@ -59,13 +65,17 @@ Tight thresholds on noisy data produce false positives. The SRE book [acknowledg
 
 False positives erode trust, so engineers stop treating alerts as urgent. Real alerts get ignored or handled slowly, and response times degrade. Incidents that should have been caught early become customer-facing outages.
 
-The Workbook warns about this. But the structure it recommends contributes to the problem when you can't staff proportionally. More SLOs means more alerts means more noise means less trust.
+The on-call investigations I've seen bear this out. In one archive of 53, 11 found no impact or nothing to fix, and 7 were events affecting one or two users. In the same archive, a real 503 problem "had been missed all afternoon."
+
+The Workbook warns about this. But the structure it recommends contributes to the problem when a team can't staff proportionally. More SLOs means more alerts means more noise means less trust.
 
 ### SME bottleneck
 
 Threshold tuning is manual and expertise-dependent. Someone needs to understand the service's behavior, look at the data, and make judgment calls about what's normal and what's degraded.
 
 This creates single points of failure on experienced SRE practitioners. When they leave or get pulled onto incidents, tuning stops. When surface area grows faster than headcount, tuning falls behind. The model requires ongoing human calibration that doesn't scale.
+
+Our alert auditing and new alert work ran through a volunteer guild. At its peak it was five people. Each team had its own SRE expert for its domain, and the platform SRE team was about two developers.
 
 ### Burn rate reality check
 
@@ -91,6 +101,8 @@ error_rate = errors / total_requests
 At 10 requests per hour, a single error is a 10% error rate. Two errors and you're at 20%. The burn rate calculation amplifies this noise into alerts that don't reflect actual system health.
 
 Some of our lowest-traffic services are also the most critical. The purchase path handles fewer requests than the homepage, but every one of those requests represents revenue. A payment endpoint might process 50 transactions per hour during off-peak. Standard SLO math falls apart at that volume, but we can't just ignore it because it's "low traffic."
+
+In practice that looks like a checkout payment SLO paging for a single user's retry loop, and another firing for two users double-submitting an order. On some days the denominator is a literal handful of orders.
 
 The Workbook's [answer is synthetic traffic](https://sre.google/workbook/alerting-on-slos/#low-traffic-services-and-error-budget-alerting): simulate load to generate enough data points. I don't buy it. Synthetic traffic adds infrastructure complexity, doesn't reflect real user behavior, and creates its own failure modes. It solves a measurement problem by adding more things that can break.
 
@@ -148,6 +160,8 @@ Payment processing is the clearest example. Rather than aggregate error rates, w
 | Medium | Wider windows, allow transients |
 | Low | Any failure pages |
 
+Each alert is a rule like "less than N transactions of this payment type in this time window," tuned to that payment type's own traffic. We run them for 12 payment types.
+
 Lower volume means each failure represents a larger share of transactions. A single failure on the lowest-volume payment method might be 5% of that hour's traffic. Standard burn rates would never catch it.
 
 The tradeoff is maintenance cost. These custom alerts require domain knowledge to set up and tune. But for mission-critical, low-traffic paths, that cost is worth it. The alternative is either constant noise from oversensitive SLOs or blind spots on the most important transactions.
@@ -183,6 +197,8 @@ When an on-call engineer gets paged, they need context before they can even thin
 
 Assembling this takes 15 to 30 minutes. An agent that pulls it automatically would cut that to seconds. The value compounds as deploy velocity increases. More deploys means more potential causes means more time spent on context assembly.
 
+A colleague has since built a version of this. Since late August it has polled PagerDuty for new incidents, investigated each one read-only through Splunk, and written up what it found, unattended. Several of the numbers in this post come from those write-ups.
+
 ```
 Alert fires
     ↓
@@ -201,6 +217,8 @@ This sits between the alerting system and PagerDuty:
 4. If noise: create ticket to fix the threshold, suppress the page
 
 Noise has a cost. Every false positive erodes trust, burns on-call attention, and contributes to alert fatigue. Currently, humans absorb that cost. An agent that filters noise and creates actionable work items to fix the underlying threshold problems shifts that cost away from human attention.
+
+The triage write-ups make the case for this one too. One threshold review was recommended by four separate investigations and still hadn't been actioned.
 
 ### The compound effect
 
