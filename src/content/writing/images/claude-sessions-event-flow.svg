@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" role="img" aria-label="GitLab polls and session events feed review alerts, comment alerts, ClickUp status proposals, and desktop notifications">
+  <style>
+    .bg { fill: #ffffff; }
+    .src { fill: #1f2937; }
+    .src-t { fill: #ffffff; }
+    .evt { fill: #f3f4f6; stroke: #d1d5db; }
+    .sub { fill: #eef4fc; stroke: #2a78d6; }
+    .t { fill: #111827; font-size: 14px; }
+    .s { fill: #6b7280; font-size: 12px; }
+    .hd { fill: #6b7280; font-size: 11px; letter-spacing: .08em; }
+    .ln { stroke: #9ca3af; stroke-width: 1.5; fill: none; }
+    .ah { fill: #9ca3af; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #1a1d20; }
+      .src { fill: #e5e7eb; }
+      .src-t { fill: #111827; }
+      .evt { fill: #24282c; stroke: #3a3f44; }
+      .sub { fill: #1d2a3a; stroke: #3987e5; }
+      .t { fill: #e9ebec; }
+      .s, .hd { fill: #9ca3af; }
+      .ln { stroke: #6b7280; }
+      .ah { fill: #6b7280; }
+    }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="ah"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="720" height="330" rx="10"/>
+
+  <text class="hd" x="20" y="28">SOURCES</text>
+  <text class="hd" x="262" y="28">EVENTS</text>
+  <text class="hd" x="522" y="28">SUBSCRIBERS</text>
+
+  <rect class="src" x="20" y="88" width="170" height="60" rx="8"/>
+  <text class="t src-t" x="105" y="114" text-anchor="middle" style="fill:inherit"><tspan class="src-t">GitLab polls</tspan></text>
+  <text class="s src-t" x="105" y="134" text-anchor="middle"><tspan class="src-t">every few minutes</tspan></text>
+
+  <rect class="src" x="20" y="228" width="170" height="60" rx="8"/>
+  <text class="t" x="105" y="263" text-anchor="middle"><tspan class="src-t">Session events</tspan></text>
+
+  <rect class="evt" x="262" y="44" width="200" height="40" rx="6"/>
+  <text class="t" x="362" y="69" text-anchor="middle">Review requested</text>
+  <rect class="evt" x="262" y="98" width="200" height="40" rx="6"/>
+  <text class="t" x="362" y="123" text-anchor="middle">Comment on my MR</text>
+  <rect class="evt" x="262" y="152" width="200" height="40" rx="6"/>
+  <text class="t" x="362" y="177" text-anchor="middle">Merge request opened</text>
+  <rect class="evt" x="262" y="206" width="200" height="40" rx="6"/>
+  <text class="t" x="362" y="231" text-anchor="middle">Session started</text>
+  <rect class="evt" x="262" y="260" width="200" height="40" rx="6"/>
+  <text class="t" x="362" y="285" text-anchor="middle">Finished or waiting on me</text>
+
+  <rect class="sub" x="522" y="44" width="180" height="40" rx="6"/>
+  <text class="t" x="612" y="69" text-anchor="middle">Review alert</text>
+  <rect class="sub" x="522" y="98" width="180" height="40" rx="6"/>
+  <text class="t" x="612" y="123" text-anchor="middle">Comment alert</text>
+  <rect class="sub" x="522" y="152" width="180" height="40" rx="6"/>
+  <text class="t" x="612" y="170" text-anchor="middle">Ask to move ticket</text>
+  <text class="s" x="612" y="185" text-anchor="middle">to Peer review</text>
+  <rect class="sub" x="522" y="206" width="180" height="40" rx="6"/>
+  <text class="t" x="612" y="224" text-anchor="middle">Ask to move ticket</text>
+  <text class="s" x="612" y="239" text-anchor="middle">to In progress</text>
+  <rect class="sub" x="522" y="260" width="180" height="40" rx="6"/>
+  <text class="t" x="612" y="285" text-anchor="middle">Desktop notification</text>
+
+  <path class="ln" d="M190,118 C226,118 226,64 260,64" marker-end="url(#a)"/>
+  <path class="ln" d="M190,118 C226,118 226,118 260,118" marker-end="url(#a)"/>
+  <path class="ln" d="M190,118 C226,118 226,172 260,172" marker-end="url(#a)"/>
+  <path class="ln" d="M190,258 C226,258 226,226 260,226" marker-end="url(#a)"/>
+  <path class="ln" d="M190,258 C226,258 226,280 260,280" marker-end="url(#a)"/>
+
+  <path class="ln" d="M462,64 H520" marker-end="url(#a)"/>
+  <path class="ln" d="M462,118 H520" marker-end="url(#a)"/>
+  <path class="ln" d="M462,172 H520" marker-end="url(#a)"/>
+  <path class="ln" d="M462,226 H520" marker-end="url(#a)"/>
+  <path class="ln" d="M462,280 H520" marker-end="url(#a)"/>
+</svg>

@@ -78,12 +78,6 @@ A few things it does now:
 - **Review alerts.** It polls GitLab every five minutes and notifies me when I'm assigned a review. Nobody has to Slack me that something is ready.
 - **Comment alerts.** Comments on my merge requests reach me within five minutes. I used to track that in my head across every open MR.
 
-<!-- TODO: add image
-![Desktop notifications for a finished session and a review request](./images/claude-sessions-notifications.png)
-
-<p class="caption"><small><em>A notification when a session finishes and another when I'm assigned a review.</em></small></p>
--->
-
 With that in place I can run about five things at once while still building the tool I'm using.
 
 ## The advisor
@@ -127,11 +121,9 @@ The AI drafts, I decide. Reviews go much faster, and nothing goes out that I hav
 
 A lot happens in the app now, so each source has its own event emitter. Any feature can subscribe to the events it cares about.
 
-<!-- TODO: add image
 ![Event flow: GitLab poll and session events feed subscribers](./images/claude-sessions-event-flow.svg)
 
 <p class="caption"><small><em>GitLab polls and session events feed the alerts and the ClickUp status changes.</em></small></p>
--->
 
 | Event                            | What happens                                    |
 | -------------------------------- | ----------------------------------------------- |
