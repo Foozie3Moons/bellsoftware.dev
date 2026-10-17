@@ -12,7 +12,7 @@ That isn't how it played out.
 
 ## The generalist problem
 
-The generalist worked, technically. It produced code. The code compiled. Some of it was even good. But the more I asked it to do, the less it felt like building software and the more it felt like managing someone who was trying very hard to do five jobs at once. Decisions in one part of the codebase contradicted decisions in another. Patterns I'd established got quietly relitigated. The output was always plausible, which made it worse, because plausible-but-wrong is harder to catch than obviously-wrong.
+The generalist worked, technically. It produced code. The code compiled. Some of it was even good. But the more I asked it to do, the less it felt like building software and the more it felt like managing someone who was trying very hard to do five jobs at once. Decisions in one part of the codebase contradicted decisions in another. Patterns I'd established got quietly relitigated. The output was always plausible, which made it worse. Plausible but wrong is harder to catch than obviously wrong.
 
 Here's the git log from the first two and a half weeks:
 
@@ -25,19 +25,19 @@ Mar 29  Revert "fix: make dev agent work in deployed Docker environment"
 Mar 29  Revert "feat: add dev agent for code changes via Telegram"
 ```
 
-Three commits building a feature. Three commits deleting it. Complete waste. No explanation needed because I know exactly what happened: the agent made locally reasonable decisions that didn't survive contact with reality. The fix didn't work, the infrastructure change caused problems, so I reverted everything. This pattern repeated constantly.
+Three commits building a feature. Three commits deleting it. Complete waste. No explanation needed because I know exactly what happened: the agent made locally reasonable decisions that fell apart once they were deployed. The fix didn't work and the infrastructure change caused problems, so I reverted everything. This pattern repeated constantly.
 
-PII detection took seven fixes in three days. The initial implementation looked good but redacted `"Apple"` and `"the"` as personal names. Each fix was a patch rather than stepping back to rethink the approach.
+PII detection took seven fixes in three days. The initial implementation looked good but redacted `"Apple"` and `"the"` as personal names. Each fix patched the last one instead of stepping back to rethink the approach.
 
-The dashboard got rewritten four times in two weeks. Each commit message used words like "rebuild," "redesign," "modernize." One of them mentioned "consistent patterns" as if that were new, after two weeks of dashboard work.
+The dashboard got rewritten four times in two weeks. Each commit message used words like "rebuild," "redesign," and "modernize." One of them mentioned "consistent patterns" as if that were new, after two weeks of dashboard work.
 
 Code written on day one was called **legacy** by day four.
 
 An auth implementation shipped and got replaced with a completely different approach the same day. The first version never should have been committed.
 
-Some of this is on me. I was reviewing fast, trusting the agent to hold the line on conventions it had already been told. I had guardrails in place: coding style rules, conventions documented in project files. They weren't working. The agent read them, sometimes followed them, and sometimes didn't. "Told once" doesn't hold. Conventions need machinery behind them, not just instructions.
+Some of this is on me. I was reviewing fast, trusting the agent to hold the line on conventions it had already been told. I had guardrails in place: coding style rules, conventions documented in project files. They weren't working. The agent read them, sometimes followed them, and sometimes didn't. Telling it once wasn't enough. Conventions needed machinery behind them.
 
-The breaking point came at 1 AM on a work night. I sat down and wrote seven specialist agents in one commit. Five minutes later I kicked off the first orchestrated task. The specialists went into production within five minutes of being created because I couldn't afford to keep working the way I had been.
+The breaking point came at 1 AM on a work night. I sat down and wrote seven specialist agents in one commit. Five minutes later I kicked off the first orchestrated task, because I couldn't afford to keep working the way I had been.
 
 The fleet:
 
@@ -51,15 +51,15 @@ The fleet:
 | **LLM Engineer** | Owns the AI/LLM integration layer |
 | **Skill Author** | Writes and maintains the household assistant's skills |
 
-The first task I gave them was to clean up the mess: "I don't know what's current or legacy." That wasn't confusion. That was an accurate description of what the generalist had produced. The plausible decisions at every fork hadn't cohered into anything I could reason about.
+The first task I gave them was to clean up the mess: "I don't know what's current or legacy." That was an accurate description of what the generalist had produced. All those plausible decisions hadn't added up to anything I could reason about.
 
 ## The fix: specialists and machinery
 
-The fix wasn't a single shift. It was iterative. Each failure mode got its own machinery.
+There wasn't one fix. Each failure mode got its own machinery as I ran into it.
 
 ### Specialists
 
-I carved work into specialized agents with tight **system prompts** and narrow **tool surfaces**. One that only thinks about architecture. One that only writes specs. One that only does dashboard work. Each with their own constraints, their own scope.
+I carved work into specialized agents with tight system prompts and narrow tool surfaces. One that only thinks about architecture. One that only writes specs. One that only does dashboard work. Each with their own constraints, their own scope.
 
 Here's a real example. This is the agent definition for the architect specialist:
 
@@ -77,11 +77,11 @@ dispatch other agents. Your only output is a spec document.
 - You do not produce a spec without running discovery first.
 ```
 
-The key is what's excluded. The architect doesn't know how to write a React component because it doesn't have the tools or the scope. It can't drift into implementation because implementation isn't in its world. Compare that to the **dashboard engineer**, which owns specific files across specific layers and explicitly does NOT touch agent management or chat features. Each specialist has walls, not just guidance.
+The key is what's excluded. The architect doesn't know how to write a React component because it doesn't have the tools or the scope. It can't drift into implementation because implementation isn't in its world. Compare that to the dashboard engineer, which owns specific files across specific layers and explicitly does NOT touch agent management or chat features. Each specialist has hard limits on what it can touch.
 
 ### Observability
 
-I added dispatch logging so I could see what was happening. Every time an agent spawns a subagent, a `hook` logs it:
+I added dispatch logging so I could see what was happening. Every time an agent spawns a subagent, a hook logs it:
 
 ```python
 if event_name == "PreToolUse":
@@ -103,11 +103,11 @@ Now I can see:
 - How many tokens they burn
 - Whether they're being used as intended
 
-Before this I was flying blind. The only way to gauge whether the fleet was working was vibes. There are opportunities for improvement here, but it at least gave me some information about what was happening.
+Before this I had no idea what was going on. The only way to judge whether the fleet was working was vibes. It's not perfect, but at least now I have something to go on.
 
 ### Mechanical enforcement
 
-I added `hooks` that block mistakes before they're written. Here's one that stops migrations from landing in the wrong directory.
+I added hooks that block mistakes before they're written. Here's one that stops migrations from landing in the wrong directory.
 
 The codebase has two directories that look like migration directories:
 
@@ -129,27 +129,27 @@ EOF
 fi
 ```
 
-This happened about ten times. Each time I corrected the agent. Each time it happened again. Eventually I got fed up and added the `hook`. The solution wasn't better instructions. It was a gate that makes the mistake impossible. I'd forgotten this was even a problem until I went looking for examples for this post.
+This happened about ten times. Each time I corrected the agent. Each time it happened again. Eventually I got fed up and added the hook. Better instructions didn't fix it. A gate that makes the mistake impossible did. I'd forgotten this was even a problem until I went looking for examples for this post.
 
 ## What changed
 
-The first time I ran the specialist setup I expected marginal improvement. What I got was a different category of output.
+The first time I ran the specialist setup I expected a small improvement. What I got was way better than that.
 
 I also got a clear view of the damage that had already been done. A few weeks after implementing specialists, I was fine-tuning some CSS and kept running into trouble getting small things right. I inspected the page, started editing the HTML directly, and noticed the layout was broken in ways that didn't make sense. A `page` element had `position: absolute`, which obviously breaks relationships with other elements. I went looking for the source in the CSS Modules. Couldn't find it. Looked at the component itself.
 
 **Inline styles**. Everywhere.
 
-I audited the codebase. 461 **inline style** calls across 74 files. The convention was `CSS Modules`. None of the **inline styles** were genuinely dynamic. Every single one was drift from the generalist phase: locally reasonable decisions that had accumulated into incoherence. The chat layout had been reimplemented four times because no approach was locked. This damage was already baked in before I implemented specialists. I just hadn't seen it until I started looking closely.
+I audited the codebase. 461 inline style calls across 74 files. The convention was CSS Modules. None of the inline styles were actually dynamic. Every single one was drift from the generalist phase: locally reasonable decisions that had piled up into a mess. The chat layout had been reimplemented four times because no approach was locked. This damage was already baked in before I implemented specialists. I just hadn't seen it until I started looking closely.
 
-But the new code was different. The code was more consistent. The decisions stayed coherent across the codebase. The agents stopped second-guessing things I'd already decided, because they didn't have the context to second-guess. They just did what they were built to do.
+The new code was different though. It was more consistent. The decisions stayed coherent across the codebase. The agents stopped second-guessing things I'd already decided, because they didn't have the context to second-guess. They just did what they were built to do.
 
-What I didn't expect was how much of the work moved upstream. Specialists are only as good as the seams between them, and drawing those seams turns out to be most of the job.
+What I didn't expect was how much of the work moved upstream. Specialists are only as good as the hand-offs between them. Deciding where one stops and the next starts turns out to be most of the job.
 
 - Where does the architect stop and the implementer start?
 - What does the spec-writer hand off, and in what shape?
 - Which decisions belong to me and which can I delegate?
 
-These are the same questions you ask when designing a team of humans, and the answers matter more, not less, when the team is made of agents.
+These are the same questions I'd ask designing a team of people. The answers matter even more when the team is made of agents.
 
 ## What I actually do now
 
@@ -158,6 +158,6 @@ The work I'm doing now looks less like prompting and more like org design.
 - I write specs.
 - I define interfaces between specialists.
 - I curate context.
-- I codify recurring corrections into reusable **skills** so the fleet stays aligned with my taste without me having to be in the loop on every decision.
+- I codify recurring corrections into reusable skills so the fleet stays aligned with my taste without me having to be in the loop on every decision.
 
-Six weeks and 93k lines later, the work that matters most is upstream of the code: specs, interfaces between specialists, context curation. The actual prompting is the smallest part. As a soon-to-be dad of two, that's exactly what I need.
+Six weeks and 93k lines later, the work that matters most is upstream of the code: specs, interfaces between specialists, and context curation. The actual prompting is the smallest part. As a soon-to-be dad of two, that's exactly what I need.
