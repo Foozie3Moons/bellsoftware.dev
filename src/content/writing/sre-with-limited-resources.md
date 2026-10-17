@@ -13,7 +13,7 @@ I've read the [SRE Workbook](https://sre.google/workbook/table-of-contents/) cov
 
 The Workbook is excellent, but its assumptions don't translate cleanly when a team's surface area outgrows the headcount available to cover it. Practices that work for Google's dedicated teams start to fail at smaller scale.
 
-A [second edition](https://www.oreilly.com/library/view/site-reliability-engineering/9798341607675/), scheduled for October 2026, explicitly addresses how SRE applies beyond Google's scale. This post is what I've learned trying to make the first edition work in the meantime.
+Google released a [second edition](https://cloud.google.com/blog/products/devops-sre/sre-book-second-edition) of the original SRE book in October 2026. Unlike the first edition it isn't free to read online. It's a full rewrite that covers multi-tiered SLOs, dynamic burn-rate alerting, and reliability champions embedded in product teams. This post is what I learned making the Workbook work before it came out.
 
 ## The Workbook's assumptions
 
