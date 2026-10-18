@@ -2,28 +2,41 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import './ClaudeSessionsDemo.css';
 
 /*
- * A simplified, self-contained mock of Claude Sessions for the
- * "Where AI Actually Fits" post. Nothing here talks to a real service:
- * every event (GitLab poll, session state, ClickUp status) is simulated.
+ * A simplified, self-contained mock of Claude Sessions, modeled on the
+ * screenshots in "Where AI Actually Fits". Nothing here talks to a real
+ * service: GitLab polls, session state and ClickUp changes are all simulated.
  */
 
-type SessionStatus = 'running' | 'waiting' | 'done';
-type TaskStatus = 'To do' | 'In progress' | 'Peer review' | 'Delivered';
-type Tab = 'sessions' | 'work';
+type View = 'sessions' | 'work';
+type State = 'running' | 'waiting' | 'idle' | 'done';
+
+interface Msg {
+  kind: 'you' | 'claude' | 'tools' | 'command';
+  text: string;
+  tools?: { verb: string; arg: string }[];
+}
 
 interface Session {
   id: string;
-  name: string;
-  status: SessionStatus;
-  taskId?: string;
-  log: { who: 'you' | 'claude'; text: string }[];
-  question?: { prompt: string; answer: string };
+  title: string;
+  repo: string;
+  branch: string;
+  state: State;
+  note?: string;
+  age: string;
+  chips: { label: string; tone: 'amber' | 'blue' | 'plain' }[];
+  msgs: Msg[];
+  ask?: { tool: string; arg: string };
+  then?: Msg[];
 }
 
-interface Task {
+interface Pick {
   id: string;
   title: string;
-  status: TaskStatus;
+  reason: string;
+  status: string;
+  track: 'Checkout' | 'Support';
+  mr?: string;
   sessionId?: string;
 }
 
@@ -33,333 +46,572 @@ interface Toast {
   body: string;
 }
 
-type Proposal = 'pending' | 'approved' | 'denied';
-type Nudge = 'idle' | 'drafted';
-
 const initialSessions: Session[] = [
   {
-    id: 's1',
-    name: 'Payment form validation',
-    status: 'done',
-    taskId: 't1',
-    log: [
-      { who: 'you', text: 'Add inline validation to the payment form.' },
-      { who: 'claude', text: 'Done. Validation runs on blur, tests pass, and MR !142 is open.' },
-      { who: 'claude', text: 'MR !142 was merged and deployed.' },
+    id: 'perm',
+    title: 'Permission dialog styling',
+    repo: 'claude-sessions',
+    branch: 'feature/work-tracks',
+    state: 'waiting',
+    note: 'permission',
+    age: '2m',
+    chips: [
+      { label: '1 merge request', tone: 'amber' },
+      { label: '1 ClickUp ticket', tone: 'blue' },
+      { label: '3 uncommitted files', tone: 'amber' },
+    ],
+    msgs: [
+      { kind: 'you', text: 'Give the permission dialog the same header style as the ClickUp one.' },
+      { kind: 'claude', text: 'I updated the header and the button order. I want to run the build to check it.' },
+    ],
+    ask: { tool: 'Bash', arg: 'pnpm build' },
+    then: [
+      { kind: 'tools', text: '1 tool call', tools: [{ verb: 'Bash', arg: 'pnpm build' }] },
+      { kind: 'claude', text: 'The build passes. The dialog matches the ClickUp header now.' },
     ],
   },
   {
-    id: 's2',
-    name: 'Flaky checkout test',
-    status: 'running',
-    log: [
-      { who: 'you', text: 'The checkout e2e test fails about one run in ten. Find out why.' },
-      { who: 'claude', text: 'Reproducing locally with 50 runs…' },
+    id: 'rsbuild',
+    title: 'Rsbuild migration',
+    repo: 'claude-sessions',
+    branch: 'feature/audit-follow-ups',
+    state: 'running',
+    age: 'just now',
+    chips: [{ label: '2 unpushed commits', tone: 'amber' }],
+    msgs: [
+      { kind: 'command', text: '/review the Rsbuild config' },
+      { kind: 'you', text: 'Move the renderer build from Vite to Rsbuild.' },
+      { kind: 'claude', text: 'I will swap vite.config.ts for an rsbuild.config.ts and keep the main process on esbuild.' },
+      {
+        kind: 'tools',
+        text: '3 tool calls',
+        tools: [
+          { verb: 'Read', arg: 'vite.config.ts' },
+          { verb: 'Write', arg: 'rsbuild.config.ts' },
+          { verb: 'Bash', arg: 'pnpm build' },
+        ],
+      },
+      { kind: 'claude', text: 'The build passes. Checking hot reload in pnpm dev next.' },
+    ],
+  },
+  {
+    id: 'totals',
+    title: 'Checkout totals',
+    repo: 'checkout',
+    branch: 'CU-86baf5d0y-mb-checkout-totals',
+    state: 'idle',
+    age: '3h',
+    chips: [
+      { label: '1 merge request', tone: 'amber' },
+      { label: '1 ClickUp ticket', tone: 'blue' },
+    ],
+    msgs: [
+      { kind: 'you', text: 'Round tax per line item instead of on the order total.' },
+      { kind: 'claude', text: 'Done. Rounding moved into LineItem, and MR !418 is open for review.' },
     ],
   },
 ];
 
-const initialTasks: Task[] = [
-  { id: 't1', title: 'Finish payment form validation', status: 'In progress', sessionId: 's1' },
-  { id: 't2', title: 'Address review comments on MR !138', status: 'Peer review' },
-  { id: 't3', title: 'Update the rollout ticket', status: 'To do' },
+const initialPicks: Pick[] = [
+  {
+    id: 'tax',
+    title: 'Round tax per line item',
+    reason: 'Finishing it closes the totals goal before the audit date.',
+    status: 'to do',
+    track: 'Checkout',
+    mr: '!418',
+    sessionId: 'totals',
+  },
+  {
+    id: 'invoice',
+    title: 'Customer cannot download invoice',
+    reason: 'Support has waited 6 days on it.',
+    status: 'open',
+    track: 'Support',
+  },
+  {
+    id: 'safety',
+    title: 'Judge Safety as a whole-MR check',
+    reason: 'You asked for it: it blocks the release, and nobody owns it yet.',
+    status: 'not on your board',
+    track: 'Checkout',
+  },
 ];
 
-const statusLabel: Record<SessionStatus, string> = {
-  running: 'Working',
-  waiting: 'Needs you',
-  done: 'Finished',
-};
+const swapPool: Pick[] = [
+  {
+    id: 'refund',
+    title: 'Refund email shows the wrong currency',
+    reason: 'Two tickets this week, both from the same region.',
+    status: 'open',
+    track: 'Support',
+  },
+];
 
-let nextToastId = 1;
+const trackColor = { Checkout: '#7b4fd6', Support: '#c8461a' } as const;
+
+let nextToast = 1;
+
+function stateLabel(s: Session) {
+  if (s.state === 'waiting') return 'waiting';
+  if (s.state === 'running') return 'working';
+  if (s.state === 'done') return 'done';
+  return 'idle';
+}
 
 export default function ClaudeSessionsDemo() {
-  const [tab, setTab] = useState<Tab>('work');
+  const [view, setView] = useState<View>('work');
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [activeId, setActiveId] = useState('s1');
+  const [activeId, setActiveId] = useState('perm');
+  const [picks, setPicks] = useState<Pick[]>(initialPicks);
+  const [pool, setPool] = useState<Pick[]>(swapPool);
+  const [why, setWhy] = useState<string | null>(null);
+  const [approval, setApproval] = useState<'pending' | 'open' | 'done'>('pending');
+  const [reviews, setReviews] = useState<string[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [proposal, setProposal] = useState<Proposal>('pending');
-  const [nudge, setNudge] = useState<Nudge>('idle');
-  const [reviews, setReviews] = useState(0);
   const timers = useRef<number[]>([]);
 
   const later = useCallback((ms: number, fn: () => void) => {
     timers.current.push(window.setTimeout(fn, ms));
   }, []);
-
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
 
   const notify = useCallback(
     (title: string, body: string) => {
-      const id = nextToastId++;
+      const id = nextToast++;
       setToasts((list) => [...list.slice(-1), { id, title, body }]);
-      later(3200, () => setToasts((list) => list.filter((t) => t.id !== id)));
+      later(3400, () => setToasts((list) => list.filter((t) => t.id !== id)));
     },
     [later],
   );
 
-  const updateSession = (id: string, patch: Partial<Session>) =>
-    setSessions((list) => list.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  const patch = (id: string, p: Partial<Session>) =>
+    setSessions((list) => list.map((s) => (s.id === id ? { ...s, ...p } : s)));
 
-  const setTaskStatus = (id: string, status: TaskStatus) =>
-    setTasks((list) => list.map((t) => (t.id === id ? { ...t, status } : t)));
-
-  const openSession = (id: string) => {
+  const open = (id: string) => {
     setActiveId(id);
-    setTab('sessions');
+    setView('sessions');
   };
 
-  // Play button: start a session with the task's context, or jump to the open one.
-  const play = (task: Task) => {
-    if (task.sessionId) {
-      openSession(task.sessionId);
-      return;
-    }
-    const id = `s-${task.id}`;
-    const session: Session = {
-      id,
-      name: task.title,
-      status: 'running',
-      taskId: task.id,
-      log: [
-        { who: 'you', text: `Context: "${task.title}" from ClickUp, plus the linked MR and its open comments.` },
-        { who: 'claude', text: 'Reading the review comments…' },
-      ],
-    };
-    setSessions((list) => [...list, session]);
-    setTasks((list) => list.map((t) => (t.id === task.id ? { ...t, sessionId: id, status: 'In progress' } : t)));
-    openSession(id);
-    notify('Session started', 'ClickUp task moved to In progress.');
-
-    later(2600, () => {
-      updateSession(id, {
-        status: 'waiting',
-        question: {
-          prompt: 'Two comments ask for the same refactor. Apply it once and reply to both?',
-          answer: 'Yes, apply it once',
-        },
-      });
-      notify('Claude needs your input', task.title);
-    });
-  };
-
-  const answer = (session: Session) => {
-    if (!session.question) return;
-    updateSession(session.id, {
-      status: 'running',
-      question: undefined,
-      log: [
-        ...session.log,
-        { who: 'claude', text: session.question.prompt },
-        { who: 'you', text: session.question.answer },
-        { who: 'claude', text: 'Applying the refactor and pushing…' },
-      ],
-    });
-    later(2200, () => {
+  const allow = (s: Session) => {
+    patch(s.id, { state: 'running', note: undefined, ask: undefined });
+    later(1600, () => {
       setSessions((list) =>
-        list.map((s) =>
-          s.id === session.id
-            ? {
-                ...s,
-                status: 'done',
-                log: [...s.log.slice(0, -1), { who: 'claude', text: 'Pushed. Replied to both comments.' }],
-              }
-            : s,
+        list.map((x) =>
+          x.id === s.id ? { ...x, state: 'done', age: 'just now', msgs: [...x.msgs, ...(x.then ?? [])], then: undefined } : x,
         ),
       );
-      if (session.taskId) setTaskStatus(session.taskId, 'Peer review');
-      notify('Session finished', 'MR updated. ClickUp task moved to Peer review.');
+      notify('Session finished', s.title);
     });
   };
 
-  const approve = () => {
-    setProposal('approved');
-    setTaskStatus('t1', 'Delivered');
-    notify('ClickUp updated', '"Finish payment form validation" moved to Delivered.');
+  const deny = (s: Session) => {
+    patch(s.id, {
+      state: 'idle',
+      note: undefined,
+      ask: undefined,
+      msgs: [...s.msgs, { kind: 'claude', text: 'Okay, I will not run the build. The changes are ready for you to check.' }],
+    });
   };
 
-  const pollGitLab = () => {
-    const mr = 151 + reviews;
-    setReviews((n) => n + 1);
-    notify('Review assigned', `MR !${mr} is waiting on your review.`);
+  const start = (p: Pick) => {
+    const id = `s-${p.id}`;
+    const s: Session = {
+      id,
+      title: p.title,
+      repo: p.track === 'Support' ? 'billing-portal' : 'checkout',
+      branch: `CU-${p.id}-fix`,
+      state: 'running',
+      age: 'just now',
+      chips: [{ label: '1 ClickUp ticket', tone: 'blue' }],
+      msgs: [
+        { kind: 'you', text: `${p.title}. ${p.reason}` },
+        { kind: 'claude', text: 'Reading the ticket and the linked support thread…' },
+      ],
+    };
+    setSessions((list) => [...list, s]);
+    setPicks((list) => list.map((x) => (x.id === p.id ? { ...x, sessionId: id, status: 'in progress' } : x)));
+    open(id);
+    notify('ClickUp updated', `"${p.title}" moved to in progress.`);
+    later(2600, () => {
+      setSessions((list) =>
+        list.map((x) =>
+          x.id === id
+            ? {
+                ...x,
+                state: 'waiting',
+                note: 'permission',
+                msgs: [...x.msgs.slice(0, -1), { kind: 'claude', text: 'The invoice URL expires before the email is opened. I want to run the failing test.' }],
+                ask: { tool: 'Bash', arg: 'pnpm test invoices' },
+                then: [
+                  { kind: 'tools', text: '1 tool call', tools: [{ verb: 'Bash', arg: 'pnpm test invoices' }] },
+                  { kind: 'claude', text: 'Reproduced. The link lives 15 minutes, and the email often sits longer.' },
+                ],
+              }
+            : x,
+        ),
+      );
+      notify('Claude needs you', `${p.title} · permission`);
+    });
+  };
+
+  const swap = (p: Pick) => {
+    const next = pool[0];
+    if (!next) return;
+    setPicks((list) => list.map((x) => (x.id === p.id ? next : x)));
+    setPool((list) => [...list.slice(1), p]);
+    setWhy(null);
+  };
+
+  const moveTicket = () => {
+    setApproval('done');
+    notify('ClickUp updated', '"Show checkout totals before tax" moved to delivered.');
+  };
+
+  const poll = () => {
+    const mr = `media-search!${482 + reviews.length}`;
+    setReviews((list) => [...list, mr]);
+    notify('Review requested', `${mr} is waiting on you.`);
   };
 
   const reset = () => {
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
+    setView('work');
     setSessions(initialSessions);
-    setTasks(initialTasks);
-    setActiveId('s1');
-    setTab('work');
-    setProposal('pending');
-    setNudge('idle');
-    setReviews(0);
+    setActiveId('perm');
+    setPicks(initialPicks);
+    setPool(swapPool);
+    setWhy(null);
+    setApproval('pending');
+    setReviews([]);
     setToasts([]);
   };
 
   const active = sessions.find((s) => s.id === activeId) ?? sessions[0];
+  const needsYou = sessions.filter((s) => s.state === 'waiting');
+  const groups = Array.from(new Set(sessions.filter((s) => s.state !== 'waiting').map((s) => s.repo)));
+  const live = sessions.filter((s) => s.state === 'running' || s.state === 'waiting').length;
+  const wip = (track: Pick['track']) => picks.filter((p) => p.track === track && p.status === 'in progress').length;
+
+  const row = (s: Session) => (
+    <button
+      key={s.id}
+      type="button"
+      className="cs-row"
+      aria-current={view === 'sessions' && s.id === active.id ? 'true' : undefined}
+      onClick={() => open(s.id)}
+    >
+      <span className={`cs-dot cs-dot-${s.state}`} aria-hidden="true" />
+      <span className="cs-row-main">
+        <span className="cs-row-title">
+          {s.title}
+          {s.state === 'waiting' && <span className="cs-row-repo"> · {s.repo}</span>}
+        </span>
+        {s.note && <span className="cs-row-note">{s.note}</span>}
+      </span>
+      <span className="cs-row-age">{s.age}</span>
+    </button>
+  );
 
   return (
-    <figure className="csd" aria-label="Interactive mock of Claude Sessions">
-      <div className="csd-window">
-        <div className="csd-bar">
-          <span className="csd-app">Claude Sessions</span>
-          <div className="csd-tabs" role="tablist" aria-label="View">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'sessions'}
-              className="csd-tab"
-              onClick={() => setTab('sessions')}
-            >
+    <figure className="cs" aria-label="Interactive mock of Claude Sessions">
+      <div className="cs-app">
+        <div className="cs-titlebar">
+          <span className="cs-lights" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </span>
+          <div className="cs-switch" role="tablist" aria-label="View">
+            <button type="button" role="tab" aria-selected={view === 'sessions'} onClick={() => setView('sessions')}>
               Sessions
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'work'}
-              className="csd-tab"
-              onClick={() => setTab('work')}
-            >
+            <button type="button" role="tab" aria-selected={view === 'work'} onClick={() => setView('work')}>
               Work
             </button>
           </div>
-          <button type="button" className="csd-ghost" onClick={pollGitLab}>
-            Simulate GitLab poll
-          </button>
         </div>
 
-        <div className="csd-body">
-          <nav className="csd-side" aria-label="Sessions">
-            <span className="csd-label">Sessions</span>
-            {sessions.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className="csd-session"
-                aria-current={tab === 'sessions' && s.id === active.id ? 'true' : undefined}
-                onClick={() => openSession(s.id)}
-              >
-                <span className={`csd-dot csd-dot-${s.status}`} aria-hidden="true" />
-                <span className="csd-session-name">{s.name}</span>
-                <span className="csd-sr">({statusLabel[s.status]})</span>
-              </button>
-            ))}
-          </nav>
+        <div className="cs-body">
+          {view === 'sessions' ? (
+            <>
+              <aside className="cs-side">
+                <div className="cs-side-head">
+                  <span className="cs-h1">Sessions</span>
+                  <span className="cs-muted">{live} live</span>
+                </div>
+                <div className="cs-search">Search all sessions</div>
 
-          <div className="csd-main">
-            {tab === 'work' ? (
-              <div className="csd-work">
-                <span className="csd-label">Today's priorities</span>
-                <div className="csd-tasks">
-                  {tasks.map((t, i) => (
-                    <div key={t.id} className="csd-task">
-                      <span className="csd-num">{i + 1}</span>
-                      <div className="csd-task-text">
-                        <span className="csd-task-title">{t.title}</span>
-                        <span className={`csd-chip csd-chip-${t.status.replace(' ', '-').toLowerCase()}`}>
-                          {t.status}
+                {needsYou.length > 0 && (
+                  <div className="cs-needs">
+                    <span className="cs-needs-label">Needs you {needsYou.length}</span>
+                    {needsYou.map(row)}
+                  </div>
+                )}
+
+                {groups.map((repo) => {
+                  const list = sessions.filter((s) => s.repo === repo && s.state !== 'waiting');
+                  return (
+                    <div key={repo} className="cs-group">
+                      <div className="cs-group-head">
+                        <span className="cs-group-name">{repo}</span>
+                        <span className="cs-mono cs-muted cs-ellip">{list[0]?.branch}</span>
+                      </div>
+                      {list.map(row)}
+                    </div>
+                  );
+                })}
+
+                {reviews.length > 0 && (
+                  <div className="cs-review">
+                    <span className="cs-label">Code review {reviews.length}</span>
+                    {reviews.map((r) => (
+                      <div key={r} className="cs-review-row">
+                        <span className="cs-dot cs-dot-waiting" aria-hidden="true" />
+                        <span className="cs-row-main">
+                          <span className="cs-row-title">{r} Cache facet counts</span>
+                          <span className="cs-row-note">draft to approve</span>
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        className="csd-play"
-                        onClick={() => play(t)}
-                        aria-label={t.sessionId ? `Open session for ${t.title}` : `Start session for ${t.title}`}
-                        title={t.sessionId ? 'Open session' : 'Start session'}
-                      >
-                        {t.sessionId ? (
-                          <svg viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                    ))}
+                  </div>
+                )}
+              </aside>
+
+              <section className="cs-main" aria-label={active.title}>
+                <header className="cs-head">
+                  <div className="cs-head-line">
+                    <span className="cs-title">{active.title}</span>
+                    <span className={`cs-pill cs-pill-${active.state}`}>{stateLabel(active)}</span>
+                    {active.note && <span className="cs-amber-text">{active.note}</span>}
+                    <span className="cs-head-meta">{active.repo}</span>
+                  </div>
+                  <div className="cs-chips">
+                    {active.chips.map((c) => (
+                      <span key={c.label} className={`cs-chip cs-chip-${c.tone}`}>
+                        {c.label}
+                      </span>
+                    ))}
+                  </div>
+                </header>
+                <div className="cs-status cs-mono">
+                  <span style={{ flex: "none" }}>claude-opus-5-5</span>
+                  <span className="cs-ellip cs-muted">
+                    {active.repo} @ {active.branch}
+                  </span>
+                  <span className="cs-ctx" style={{ flex: "none" }}>
+                    ctx <i style={{ width: '42%' }} /> 42%
+                  </span>
+                </div>
+
+                <div className="cs-convo">
+                  {active.msgs.map((m, i) =>
+                    m.kind === 'tools' ? (
+                      <div key={i} className="cs-tools">
+                        <span className="cs-muted">{m.text}</span>
+                        {m.tools?.map((t) => (
+                          <span key={t.verb + t.arg} className="cs-mono">
+                            <span className="cs-chev">›</span> {t.verb} <span className="cs-muted">{t.arg}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div key={i} className={`cs-msg cs-msg-${m.kind}`}>
+                        {m.kind === 'command' ? (
+                          <span className="cs-mono">
+                            <span className="cs-link">{m.text.split(' ')[0]}</span> {m.text.split(' ').slice(1).join(' ')}
+                          </span>
                         ) : (
-                          <svg viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M5.5 3.5l7 4.5-7 4.5z" fill="currentColor" />
-                          </svg>
+                          m.text
                         )}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <span className="csd-label">Advisor</span>
-                <div className="csd-card">
-                  {proposal === 'pending' && (
-                    <>
-                      <span className="csd-card-title">Move "Finish payment form validation" to Delivered?</span>
-                      <span className="csd-card-reason">Reason: MR !142 was merged and deployed.</span>
-                      <div className="csd-actions">
-                        <button type="button" className="csd-btn" onClick={() => setProposal('denied')}>
-                          Deny
-                        </button>
-                        <button type="button" className="csd-btn csd-btn-primary" onClick={approve}>
-                          Approve
-                        </button>
                       </div>
-                    </>
+                    ),
                   )}
-                  {proposal === 'approved' && <span className="csd-card-done">Approved. The task is Delivered.</span>}
-                  {proposal === 'denied' && <span className="csd-card-done">Denied. Nothing changed in ClickUp.</span>}
+                  {active.state === 'running' && <div className="cs-working cs-muted">Working…</div>}
                 </div>
 
-                <div className="csd-card">
-                  <span className="csd-card-title">MR !120 has had no approvals for 9 days.</span>
-                  {nudge === 'idle' ? (
-                    <div className="csd-actions">
-                      <button type="button" className="csd-btn" onClick={() => setNudge('drafted')}>
-                        Draft a nudge
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="csd-quote">
-                      "Hey, could you take a look at MR !120 when you get a chance? It's been open a while."
+                {active.ask ? (
+                  <div className="cs-ask">
+                    <span>
+                      Allow <b>{active.ask.tool}</b> <span className="cs-mono">{active.ask.arg}</span>?
                     </span>
+                    <span className="cs-ask-actions">
+                      <button type="button" className="cs-btn" onClick={() => deny(active)}>
+                        Deny
+                      </button>
+                      <button type="button" className="cs-btn cs-btn-blue" onClick={() => allow(active)}>
+                        Allow
+                      </button>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="cs-reply">
+                    <span className="cs-muted">Reply…</span>
+                    <span className="cs-send">Send</span>
+                  </div>
+                )}
+              </section>
+            </>
+          ) : (
+            <>
+              <aside className="cs-side">
+                <div className="cs-side-head">
+                  <span className="cs-h1">Work</span>
+                </div>
+                <div className="cs-advisor">
+                  <span aria-hidden="true">✦</span> Advisor
+                </div>
+                <div className="cs-nav cs-nav-on">
+                  Today <span className="cs-muted">3 picks</span>
+                </div>
+                <div className="cs-nav">
+                  MRs <span className="cs-muted">5</span>
+                </div>
+                <div className="cs-nav">
+                  Review <span className="cs-muted">{5 + reviews.length}</span>
+                </div>
+                <div className="cs-nav">
+                  Follow-ups <span className="cs-muted">3</span>
+                </div>
+                <span className="cs-label">Tracks</span>
+                <div className="cs-track">
+                  <span className="cs-dot" style={{ background: trackColor.Checkout }} aria-hidden="true" /> Checkout
+                  <span className="cs-muted">60%</span>
+                </div>
+                <div className="cs-track">
+                  <span className="cs-dot" style={{ background: trackColor.Support }} aria-hidden="true" /> Support
+                  <span className="cs-muted">40%</span>
+                </div>
+              </aside>
+
+              <section className="cs-main cs-work" aria-label="Today">
+                <div className="cs-work-head">
+                  <span className="cs-title">Today</span>
+                  <span className="cs-muted">Picked 1:19 PM</span>
+                  {approval !== 'done' && (
+                    <button type="button" className="cs-pending" onClick={() => setApproval('open')}>
+                      1 change to approve
+                    </button>
                   )}
                 </div>
-              </div>
-            ) : (
-              <div className="csd-chat">
-                <div className="csd-chat-head">
-                  <span className="csd-chat-title">{active.name}</span>
-                  <span className={`csd-status csd-status-${active.status}`}>{statusLabel[active.status]}</span>
-                </div>
-                <div className="csd-log">
-                  {active.log.map((m, i) => (
-                    <div key={i} className={`csd-msg csd-msg-${m.who}`}>
-                      {m.text}
-                    </div>
-                  ))}
-                  {active.question && (
-                    <div className="csd-msg csd-msg-claude csd-msg-ask">
-                      {active.question.prompt}
-                      <div className="csd-actions">
-                        <button type="button" className="csd-btn csd-btn-primary" onClick={() => answer(active)}>
-                          {active.question.answer}
-                        </button>
+
+                <div className="cs-picks">
+                  {picks.map((p, i) => (
+                    <div key={p.id} className={`cs-pick${p.status === 'not on your board' ? ' cs-pick-off' : ''}`}>
+                      <span className="cs-pick-num">{i + 1}</span>
+                      <div className="cs-pick-body">
+                        <div className="cs-pick-top">
+                          <span className="cs-pick-title">{p.title}</span>
+                          <span className={`cs-status-pill${p.status === 'in progress' ? ' cs-status-live' : ''}`}>{p.status}</span>
+                        </div>
+                        <span className="cs-pick-reason">{p.reason}</span>
+                        {why === p.id && (
+                          <span className="cs-why">
+                            Track {p.track} is at {p.track === 'Checkout' ? '60' : '40'}% of your week, and this is its oldest open item.
+                          </span>
+                        )}
+                        <div className="cs-pick-foot">
+                          <span className="cs-muted">{p.sessionId ? '1 session' : p.track}</span>
+                          <span className="cs-pick-actions">
+                            {p.mr && <span className="cs-mr">{p.mr}</span>}
+                            {p.sessionId ? (
+                              <button type="button" onClick={() => open(p.sessionId!)}>
+                                Open session
+                              </button>
+                            ) : (
+                              <button type="button" onClick={() => start(p)}>
+                                ▷ Start
+                              </button>
+                            )}
+                            <button type="button" onClick={() => swap(p)} disabled={pool.length === 0}>
+                              Swap
+                            </button>
+                            <button type="button" onClick={() => setWhy(why === p.id ? null : p.id)} aria-expanded={why === p.id}>
+                              Why?
+                            </button>
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </div>
-            )}
-          </div>
+
+                <span className="cs-wip-title">Work in progress</span>
+                <div className="cs-wip">
+                  {(['Checkout', 'Support'] as const).map((t) => (
+                    <div key={t} className="cs-wip-card">
+                      <div className="cs-wip-top">
+                        <b>{t}</b>
+                        <span className="cs-room">Room for {3 - wip(t)}</span>
+                      </div>
+                      <span>
+                        <b className="cs-big">{wip(t)}</b> / 3 in progress
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
         </div>
 
-        <div className="csd-toasts" aria-live="polite">
+        {approval === 'open' && (
+          <div className="cs-scrim">
+            <div className="cs-dialog" role="dialog" aria-label="Approve ClickUp change">
+              <div className="cs-dialog-head">
+                <b>ClickUp</b>
+                <span>Your team sees this</span>
+              </div>
+              <div className="cs-dialog-body">
+                <span className="cs-dialog-title">Move "Show checkout totals before tax" to delivered</span>
+                <div className="cs-box">
+                  <b>Change</b>
+                  <div className="cs-change">
+                    <span className="cs-muted">Status</span>
+                    <s>in progress</s>
+                    <span>
+                      <i className="cs-green-sq" aria-hidden="true" /> delivered
+                    </span>
+                  </div>
+                </div>
+                <div className="cs-box">
+                  <b>Why</b>
+                  <span className="cs-muted">Its MR !412 merged yesterday.</span>
+                </div>
+                <div className="cs-dialog-actions">
+                  <button type="button" className="cs-btn" onClick={() => setApproval('pending')}>
+                    Not now
+                  </button>
+                  <button type="button" className="cs-btn cs-btn-blue" onClick={moveTicket}>
+                    Move ticket
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="cs-toasts" aria-live="polite">
           {toasts.map((t) => (
-            <div key={t.id} className="csd-toast">
-              <span className="csd-toast-title">{t.title}</span>
-              <span className="csd-toast-body">{t.body}</span>
+            <div key={t.id} className="cs-toast">
+              <b>{t.title}</b>
+              <span>{t.body}</span>
             </div>
           ))}
         </div>
       </div>
-      <figcaption className="csd-caption">
-        <span>A simplified mock of Claude Sessions. Press play on a priority, approve the advisor, or simulate a GitLab poll.</span>
-        <button type="button" className="csd-reset" onClick={reset}>
-          Reset
-        </button>
+
+      <figcaption className="cs-caption">
+        <span>A simplified mock of Claude Sessions. Start a pick, approve the ClickUp change, or answer a permission request.</span>
+        <span className="cs-caption-actions">
+          <button type="button" onClick={poll}>
+            Simulate GitLab poll
+          </button>
+          <button type="button" onClick={reset}>
+            Reset
+          </button>
+        </span>
       </figcaption>
     </figure>
   );
