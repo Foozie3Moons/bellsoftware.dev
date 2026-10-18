@@ -172,7 +172,7 @@ Tooling isn't the problem. We have Thanos, Splunk, PagerDuty, and Grafana, and t
 
 Tuning SLOs requires judgment. Triaging alerts requires context. Maintaining thresholds requires ongoing calibration. This work scales with surface area, not headcount. More services means more manual analysis, and there's a ceiling on how much of that any team can absorb.
 
-I've been thinking about where AI fits here. These are early-stage ideas, not shipped products.
+I've been thinking about where AI fits here. These are early-stage ideas, not shipped products. Google's second edition of the SRE book has a chapter on AI for SRE, and where it covers the same ground I've followed its approach.
 
 ### SLO Auditor
 
@@ -197,7 +197,7 @@ When an on-call engineer gets paged, they need context before they can even thin
 
 Assembling this takes 15 to 30 minutes. An agent that pulls it automatically would cut that to seconds. The value compounds as deploy velocity increases. More deploys means more potential causes means more time spent on context assembly.
 
-A colleague has a Claude skill that does part of this. During their on-call shifts it polls PagerDuty for new incidents, investigates each one read-only through Splunk, and writes up what it found. Several of the numbers in this post come from the team's archive of on-call investigations.
+A colleague has a Claude skill that does part of this. During their on-call shifts it polls PagerDuty for new incidents, investigates each one read-only through Splunk, and writes up what it found. Several of the numbers in this post come from the team's archive of on-call investigations. In the second edition's terms it's a level 1, or assisted, agent. It investigates and summarizes, and a human decides what to do.
 
 ```
 Alert fires
@@ -209,34 +209,36 @@ Engineer starts with full context
 
 ### Alert Mediator
 
-This sits between the alerting system and PagerDuty:
+This sits between the alerting system and PagerDuty. The second edition's rule for agents is that they only take an action they know how to undo. A suppressed page can't be undone, so the mediator labels pages instead of suppressing them:
 
 1. Alert fires from Prometheus or Thanos
 2. Agent evaluates: real signal or noise?
-3. If real or uncertain: page
-4. If noise: create ticket to fix the threshold, suppress the page
+3. The page fires either way, labelled with the agent's verdict, its reasoning, and its confidence
+4. If it judged the alert as noise, it creates a ticket to fix the threshold
 
-Noise has a cost. Every false positive erodes trust, burns on-call attention, and contributes to alert fatigue. Currently, humans absorb that cost. An agent that filters noise and creates actionable work items to fix the underlying threshold problems shifts that cost away from human attention.
+Noise has a cost. Every false positive erodes trust, burns on-call attention, and contributes to alert fatigue. Currently, humans absorb that cost. An agent that flags noise and creates actionable work items to fix the underlying threshold problems shifts some of that cost away from human attention.
 
 The investigation archive makes the case for this one too. One threshold review was recommended by four separate investigations and still hadn't been actioned.
 
+The book also sets out how an agent earns more autonomy: test coverage, a rollback path, an error budget, and a track record at its current level. It demotes the agent automatically when the agent uses up its safety budget. A mediator that holds or suppresses pages would have to earn that, and the book is clear that not every system should get there.
+
 ### The compound effect
 
-These three concepts connect. The auditor can recommend tighter thresholds because the mediator absorbs the false positive load. Tight thresholds become viable when AI handles the noise cost rather than humans.
+These three concepts connect. The auditor can recommend tighter thresholds because the mediator turns the extra noise into threshold tickets. On-call still sees every page, but knows which ones the agent thinks are noise and why.
 
 ```
 Auditor recommends tighter SLO
     ↓
 Tighter threshold produces more alerts
     ↓
-Mediator filters noise, tickets fixes
+Mediator labels likely noise, tickets threshold fixes
     ↓
-On-call only sees real problems
+Thresholds get fixed instead of ignored
     ↓
 Trust in alerting increases
 ```
 
-This isn't solved. The obvious failure mode is an agent that suppresses real alerts, which is worse than noise, and the judgment calls are hard. The bottleneck on SRE at scale is human analysis capacity though, and that's what AI should be good at augmenting.
+This isn't solved, and the judgment calls are hard. The second edition doesn't expect AI to shrink SRE teams either. It expects the reliability bar to rise and the portfolio each team covers to grow. The bottleneck on SRE at scale is human analysis capacity, and that's what AI should be good at augmenting.
 
 ---
 
