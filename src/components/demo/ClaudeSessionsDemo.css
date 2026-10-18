@@ -882,3 +882,98 @@
     gap: var(--space-2);
   }
 }
+
+/* Advisor badge, review offers, swap, permission dialog */
+
+.cs .cs-advisor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 8px;
+  margin: 0 0 6px;
+  border-radius: 7px;
+  background: var(--cs-blue-soft);
+  text-align: left;
+}
+
+.cs .cs-advisor-waiting {
+  box-shadow: inset 0 0 0 1px var(--cs-blue);
+}
+
+.cs-advisor .cs-badge {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--cs-amber-soft);
+  color: var(--cs-amber);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.cs-offer .cs-row-main {
+  gap: 2px;
+}
+
+.cs-offer-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.cs .cs-offer-actions .cs-btn {
+  padding: 2px 9px;
+  font-size: 12px;
+}
+
+.cs .cs-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cs-review-live {
+  background: var(--cs-bg);
+}
+
+.cs-why {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cs-swap {
+  display: flex;
+  gap: 6px;
+}
+
+.cs-swap input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid #cfd4db;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12.5px;
+  background: var(--cs-bg);
+  color: var(--cs-text);
+}
+
+.cs-dialog-head-private {
+  background: var(--cs-side);
+  color: var(--cs-text);
+}
+
+.cs-field {
+  padding: 6px 9px;
+  border-radius: 5px;
+  background: var(--cs-side);
+  overflow-wrap: anywhere;
+}
+
+.cs-toasts {
+  left: auto;
+  right: 10px;
+  top: 44px;
+  bottom: auto;
+  width: 220px;
+}

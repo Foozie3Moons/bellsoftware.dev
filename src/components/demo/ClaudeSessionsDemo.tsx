@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import './ClaudeSessionsDemo.css';
 
 /*
- * A simplified, self-contained mock of Claude Sessions, modeled on the
- * screenshots in "Where AI Actually Fits". Nothing here talks to a real
- * service: GitLab polls, session state and ClickUp changes are all simulated.
+ * A simplified, self-contained mock of Claude Sessions, modeled on how the
+ * real app behaves. Nothing here talks to a real service: GitLab polls,
+ * session state and ClickUp changes are all simulated.
  */
 
 type View = 'sessions' | 'work';
@@ -14,6 +14,15 @@ interface Msg {
   kind: 'you' | 'claude' | 'tools' | 'command';
   text: string;
   tools?: { verb: string; arg: string }[];
+}
+
+interface Ask {
+  tool: string;
+  heading: string;
+  summary: string;
+  field: string;
+  value: string;
+  why: string;
 }
 
 interface Session {
@@ -26,18 +35,42 @@ interface Session {
   age: string;
   chips: { label: string; tone: 'amber' | 'blue' | 'plain' }[];
   msgs: Msg[];
-  ask?: { tool: string; arg: string };
+  ask?: Ask;
   then?: Msg[];
 }
 
 interface Pick {
   id: string;
+  ticket: string;
   title: string;
   reason: string;
   status: string;
   track: 'Checkout' | 'Support';
   mr?: string;
   sessionId?: string;
+}
+
+interface Approval {
+  id: string;
+  ticket: string;
+  name: string;
+  from: string;
+  to: string;
+  why: string;
+  pickId?: string;
+}
+
+interface Offer {
+  label: string;
+  title: string;
+  author: string;
+  starting?: boolean;
+}
+
+interface Review {
+  label: string;
+  title: string;
+  state: 'running' | 'waiting';
 }
 
 interface Toast {
@@ -61,13 +94,33 @@ const initialSessions: Session[] = [
       { label: '3 uncommitted files', tone: 'amber' },
     ],
     msgs: [
-      { kind: 'you', text: 'Give the permission dialog the same header style as the ClickUp one.' },
-      { kind: 'claude', text: 'I updated the header and the button order. I want to run the build to check it.' },
+      {
+        kind: 'you',
+        text: 'Give the permission dialog the same header style as the ClickUp one.',
+      },
+      {
+        kind: 'claude',
+        text: 'I updated the header and the button order. I want to run the build to check it.',
+      },
     ],
-    ask: { tool: 'Bash', arg: 'pnpm build' },
+    ask: {
+      tool: 'Bash',
+      heading: 'Run a command?',
+      summary: 'Build the app',
+      field: 'Command',
+      value: 'pnpm build',
+      why: 'The header and button order changed, and the build checks nothing else broke.',
+    },
     then: [
-      { kind: 'tools', text: '1 tool call', tools: [{ verb: 'Bash', arg: 'pnpm build' }] },
-      { kind: 'claude', text: 'The build passes. The dialog matches the ClickUp header now.' },
+      {
+        kind: 'tools',
+        text: '1 tool call',
+        tools: [{ verb: 'Bash', arg: 'pnpm build' }],
+      },
+      {
+        kind: 'claude',
+        text: 'The build passes. The dialog matches the ClickUp header now.',
+      },
     ],
   },
   {
@@ -81,7 +134,10 @@ const initialSessions: Session[] = [
     msgs: [
       { kind: 'command', text: '/review the Rsbuild config' },
       { kind: 'you', text: 'Move the renderer build from Vite to Rsbuild.' },
-      { kind: 'claude', text: 'I will swap vite.config.ts for an rsbuild.config.ts and keep the main process on esbuild.' },
+      {
+        kind: 'claude',
+        text: 'I will swap vite.config.ts for an rsbuild.config.ts and keep the main process on esbuild.',
+      },
       {
         kind: 'tools',
         text: '3 tool calls',
@@ -91,14 +147,17 @@ const initialSessions: Session[] = [
           { verb: 'Bash', arg: 'pnpm build' },
         ],
       },
-      { kind: 'claude', text: 'The build passes. Checking hot reload in pnpm dev next.' },
+      {
+        kind: 'claude',
+        text: 'The build passes. Checking hot reload in pnpm dev next.',
+      },
     ],
   },
   {
     id: 'totals',
-    title: 'Checkout totals',
+    title: 'Round tax per line item',
     repo: 'checkout',
-    branch: 'CU-86baf5d0y-mb-checkout-totals',
+    branch: 'CU-86baf5d0y-mb-round-tax-per-line',
     state: 'idle',
     age: '3h',
     chips: [
@@ -106,8 +165,14 @@ const initialSessions: Session[] = [
       { label: '1 ClickUp ticket', tone: 'blue' },
     ],
     msgs: [
-      { kind: 'you', text: 'Round tax per line item instead of on the order total.' },
-      { kind: 'claude', text: 'Done. Rounding moved into LineItem, and MR !418 is open for review.' },
+      {
+        kind: 'you',
+        text: 'Round tax per line item instead of on the order total.',
+      },
+      {
+        kind: 'claude',
+        text: 'Done. Rounding moved into LineItem, and MR !418 is open for review.',
+      },
     ],
   },
 ];
@@ -115,15 +180,17 @@ const initialSessions: Session[] = [
 const initialPicks: Pick[] = [
   {
     id: 'tax',
+    ticket: '86baf5d0y',
     title: 'Round tax per line item',
     reason: 'Finishing it closes the totals goal before the audit date.',
-    status: 'to do',
+    status: 'peer review',
     track: 'Checkout',
     mr: '!418',
     sessionId: 'totals',
   },
   {
     id: 'invoice',
+    ticket: '86bb2k7q1',
     title: 'Customer cannot download invoice',
     reason: 'Support has waited 6 days on it.',
     status: 'open',
@@ -131,6 +198,7 @@ const initialPicks: Pick[] = [
   },
   {
     id: 'safety',
+    ticket: '86bb3m9x4',
     title: 'Judge Safety as a whole-MR check',
     reason: 'You asked for it: it blocks the release, and nobody owns it yet.',
     status: 'not on your board',
@@ -141,12 +209,29 @@ const initialPicks: Pick[] = [
 const swapPool: Pick[] = [
   {
     id: 'refund',
+    ticket: '86bb4c2n8',
     title: 'Refund email shows the wrong currency',
     reason: 'Two tickets this week, both from the same region.',
     status: 'open',
     track: 'Support',
   },
 ];
+
+const initialApprovals: Approval[] = [
+  {
+    id: 'delivered',
+    ticket: '86baf5c1r',
+    name: 'Show checkout totals before tax',
+    from: 'in progress',
+    to: 'delivered',
+    why: 'Its MR !412 is merged',
+  },
+];
+
+const whyAnswer: Record<Pick['track'], string> = {
+  Checkout: 'Checkout is your top track this quarter, and this is the oldest open item on it.',
+  Support: 'Support tickets past five days count against the team goal, and this one is at six.',
+};
 
 const trackColor = { Checkout: '#7b4fd6', Support: '#c8461a' } as const;
 
@@ -159,6 +244,16 @@ function stateLabel(s: Session) {
   return 'idle';
 }
 
+function slug(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .split('-')
+    .slice(0, 4)
+    .join('-');
+}
+
 export default function ClaudeSessionsDemo() {
   const [view, setView] = useState<View>('work');
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
@@ -166,15 +261,24 @@ export default function ClaudeSessionsDemo() {
   const [picks, setPicks] = useState<Pick[]>(initialPicks);
   const [pool, setPool] = useState<Pick[]>(swapPool);
   const [why, setWhy] = useState<string | null>(null);
-  const [approval, setApproval] = useState<'pending' | 'open' | 'done'>('pending');
-  const [reviews, setReviews] = useState<string[]>([]);
+  const [swapping, setSwapping] = useState<string | null>(null);
+  const [swapReason, setSwapReason] = useState('');
+  const [approvals, setApprovals] = useState<Approval[]>(initialApprovals);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [polls, setPolls] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timers = useRef<number[]>([]);
+  const reviewRef = useRef<HTMLDivElement>(null);
 
   const later = useCallback((ms: number, fn: () => void) => {
     timers.current.push(window.setTimeout(fn, ms));
   }, []);
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+  useEffect(() => {
+    if (offers.length > 0) reviewRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [offers.length, view]);
 
   const notify = useCallback(
     (title: string, body: string) => {
@@ -198,10 +302,18 @@ export default function ClaudeSessionsDemo() {
     later(1600, () => {
       setSessions((list) =>
         list.map((x) =>
-          x.id === s.id ? { ...x, state: 'done', age: 'just now', msgs: [...x.msgs, ...(x.then ?? [])], then: undefined } : x,
+          x.id === s.id
+            ? {
+                ...x,
+                state: 'done',
+                age: 'just now',
+                msgs: [...x.msgs, ...(x.then ?? [])],
+                then: undefined,
+              }
+            : x,
         ),
       );
-      notify('Session finished', s.title);
+      notify('Task finished', s.title);
     });
   };
 
@@ -210,29 +322,54 @@ export default function ClaudeSessionsDemo() {
       state: 'idle',
       note: undefined,
       ask: undefined,
-      msgs: [...s.msgs, { kind: 'claude', text: 'Okay, I will not run the build. The changes are ready for you to check.' }],
+      then: undefined,
+      msgs: [
+        ...s.msgs,
+        {
+          kind: 'claude',
+          text: 'Okay, I will not run it. The changes are ready for you to check.',
+        },
+      ],
     });
   };
 
   const start = (p: Pick) => {
     const id = `s-${p.id}`;
+    const branch = `CU-${p.ticket}-mb-${slug(p.title)}`;
     const s: Session = {
       id,
       title: p.title,
       repo: p.track === 'Support' ? 'billing-portal' : 'checkout',
-      branch: `CU-${p.id}-fix`,
+      branch,
       state: 'running',
       age: 'just now',
       chips: [{ label: '1 ClickUp ticket', tone: 'blue' }],
       msgs: [
-        { kind: 'you', text: `${p.title}. ${p.reason}` },
-        { kind: 'claude', text: 'Reading the ticket and the linked support thread…' },
+        {
+          kind: 'you',
+          text: `Start on CU-${p.ticket}, "${p.title}", on the ${p.track} track. ${p.reason}`,
+        },
+        {
+          kind: 'claude',
+          text: 'Reading the ticket and the linked support thread…',
+        },
       ],
     };
     setSessions((list) => [...list, s]);
-    setPicks((list) => list.map((x) => (x.id === p.id ? { ...x, sessionId: id, status: 'in progress' } : x)));
+    setPicks((list) => list.map((x) => (x.id === p.id ? { ...x, sessionId: id } : x)));
+    setApprovals((list) => [
+      ...list,
+      {
+        id: `progress-${p.id}`,
+        ticket: p.ticket,
+        name: p.title,
+        from: p.status,
+        to: 'in progress',
+        why: `A session is working on it on ${branch}`,
+        pickId: p.id,
+      },
+    ]);
     open(id);
-    notify('ClickUp updated', `"${p.title}" moved to in progress.`);
     later(2600, () => {
       setSessions((list) =>
         list.map((x) =>
@@ -241,38 +378,84 @@ export default function ClaudeSessionsDemo() {
                 ...x,
                 state: 'waiting',
                 note: 'permission',
-                msgs: [...x.msgs.slice(0, -1), { kind: 'claude', text: 'The invoice URL expires before the email is opened. I want to run the failing test.' }],
-                ask: { tool: 'Bash', arg: 'pnpm test invoices' },
+                msgs: [
+                  ...x.msgs.slice(0, -1),
+                  {
+                    kind: 'claude',
+                    text: 'The invoice URL expires before the email is opened. I want to run the failing test.',
+                  },
+                ],
+                ask: {
+                  tool: 'Bash',
+                  heading: 'Run a command?',
+                  summary: 'Run the invoice tests',
+                  field: 'Command',
+                  value: 'pnpm test invoices',
+                  why: 'The download link looks like it expires early, and this test should reproduce it.',
+                },
                 then: [
-                  { kind: 'tools', text: '1 tool call', tools: [{ verb: 'Bash', arg: 'pnpm test invoices' }] },
-                  { kind: 'claude', text: 'Reproduced. The link lives 15 minutes, and the email often sits longer.' },
+                  {
+                    kind: 'tools',
+                    text: '1 tool call',
+                    tools: [{ verb: 'Bash', arg: 'pnpm test invoices' }],
+                  },
+                  {
+                    kind: 'claude',
+                    text: 'Reproduced. The link lives 15 minutes, and the email often sits longer.',
+                  },
                 ],
               }
             : x,
         ),
       );
-      notify('Claude needs you', `${p.title} · permission`);
+      notify('Waiting on permission', p.title);
     });
   };
 
-  const swap = (p: Pick) => {
+  const submitSwap = (event: FormEvent) => {
+    event.preventDefault();
+    const id = swapping;
     const next = pool[0];
-    if (!next) return;
-    setPicks((list) => list.map((x) => (x.id === p.id ? next : x)));
-    setPool((list) => [...list.slice(1), p]);
-    setWhy(null);
+    setSwapping(null);
+    setSwapReason('');
+    if (!id || !next) return;
+    setPicks((list) => list.map((x) => (x.id === id ? { ...x, status: 'swapping' } : x)));
+    later(1200, () => {
+      const old = picks.find((x) => x.id === id);
+      setPicks((list) => list.map((x) => (x.id === id ? next : x)));
+      setPool((list) => [...list.slice(1), ...(old ? [old] : [])]);
+      setWhy(null);
+    });
   };
 
-  const moveTicket = () => {
-    setApproval('done');
-    notify('ClickUp updated', '"Show checkout totals before tax" moved to delivered.');
+  const decide = (a: Approval, allowed: boolean) => {
+    const rest = approvals.filter((x) => x.id !== a.id);
+    setApprovals(rest);
+    if (rest.length === 0) setApprovalOpen(false);
+    if (allowed && a.pickId) setPicks((list) => list.map((x) => (x.id === a.pickId ? { ...x, status: a.to } : x)));
   };
 
   const poll = () => {
-    const mr = `media-search!${482 + reviews.length}`;
-    setReviews((list) => [...list, mr]);
-    notify('Review requested', `${mr} is waiting on you.`);
+    const label = `web-app!${482 + polls}`;
+    const title = polls % 2 === 0 ? 'Cache facet counts' : 'Retry failed webhooks';
+    setPolls((n) => n + 1);
+    setOffers((list) => [...list, { label, title, author: 'jordan' }]);
+    notify('Review requested', `${label} · ${title} by jordan`);
   };
+
+  const runReview = (o: Offer) => {
+    setOffers((list) => list.map((x) => (x.label === o.label ? { ...x, starting: true } : x)));
+    later(800, () => {
+      setOffers((list) => list.filter((x) => x.label !== o.label));
+      setReviews((list) => [...list, { label: o.label, title: o.title, state: 'running' }]);
+    });
+    later(3200, () => {
+      setReviews((list) => list.map((r) => (r.label === o.label ? { ...r, state: 'waiting' } : r)));
+      notify('Task finished', `Review of ${o.label}`);
+    });
+  };
+
+  const skip = (o: Offer) => setOffers((list) => list.filter((x) => x.label !== o.label));
 
   const reset = () => {
     timers.current.forEach((t) => window.clearTimeout(t));
@@ -283,8 +466,13 @@ export default function ClaudeSessionsDemo() {
     setPicks(initialPicks);
     setPool(swapPool);
     setWhy(null);
-    setApproval('pending');
+    setSwapping(null);
+    setSwapReason('');
+    setApprovals(initialApprovals);
+    setApprovalOpen(false);
+    setOffers([]);
     setReviews([]);
+    setPolls(0);
     setToasts([]);
   };
 
@@ -293,6 +481,7 @@ export default function ClaudeSessionsDemo() {
   const groups = Array.from(new Set(sessions.filter((s) => s.state !== 'waiting').map((s) => s.repo)));
   const live = sessions.filter((s) => s.state === 'running' || s.state === 'waiting').length;
   const wip = (track: Pick['track']) => picks.filter((p) => p.track === track && p.status === 'in progress').length;
+  const approval = approvals[0];
 
   const row = (s: Session) => (
     <button
@@ -363,15 +552,42 @@ export default function ClaudeSessionsDemo() {
                   );
                 })}
 
-                {reviews.length > 0 && (
-                  <div className="cs-review">
-                    <span className="cs-label">Code review {reviews.length}</span>
-                    {reviews.map((r) => (
-                      <div key={r} className="cs-review-row">
+                {(offers.length > 0 || reviews.length > 0) && (
+                  <div className="cs-review" ref={reviewRef}>
+                    <span className="cs-label">Code review</span>
+                    {offers.map((o) => (
+                      <div key={o.label} className="cs-review-row cs-offer">
                         <span className="cs-dot cs-dot-waiting" aria-hidden="true" />
                         <span className="cs-row-main">
-                          <span className="cs-row-title">{r} Cache facet counts</span>
-                          <span className="cs-row-note">draft to approve</span>
+                          <span className="cs-row-title">{o.label}</span>
+                          <span className="cs-ellip">{o.title}</span>
+                          <span className="cs-row-note">Review requested by {o.author}</span>
+                          <span className="cs-offer-actions">
+                            <button type="button" className="cs-btn" disabled={o.starting} onClick={() => skip(o)}>
+                              Skip
+                            </button>
+                            <button
+                              type="button"
+                              className="cs-btn cs-btn-blue"
+                              disabled={o.starting}
+                              onClick={() => runReview(o)}
+                            >
+                              {o.starting ? 'Starting…' : 'Run review'}
+                            </button>
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                    {reviews.map((r) => (
+                      <div key={r.label} className={`cs-review-row${r.state === 'running' ? ' cs-review-live' : ''}`}>
+                        <span className={`cs-dot cs-dot-${r.state}`} aria-hidden="true" />
+                        <span className="cs-row-main">
+                          <span className="cs-row-title">
+                            {r.label} {r.title}
+                          </span>
+                          <span className="cs-row-note">
+                            {r.state === 'running' ? 'reviewing…' : 'draft to approve'}
+                          </span>
                         </span>
                       </div>
                     ))}
@@ -396,11 +612,11 @@ export default function ClaudeSessionsDemo() {
                   </div>
                 </header>
                 <div className="cs-status cs-mono">
-                  <span style={{ flex: "none" }}>claude-opus-5-5</span>
+                  <span style={{ flex: 'none' }}>claude-opus-5-5</span>
                   <span className="cs-ellip cs-muted">
                     {active.repo} @ {active.branch}
                   </span>
-                  <span className="cs-ctx" style={{ flex: "none" }}>
+                  <span className="cs-ctx" style={{ flex: 'none' }}>
                     ctx <i style={{ width: '42%' }} /> 42%
                   </span>
                 </div>
@@ -420,7 +636,8 @@ export default function ClaudeSessionsDemo() {
                       <div key={i} className={`cs-msg cs-msg-${m.kind}`}>
                         {m.kind === 'command' ? (
                           <span className="cs-mono">
-                            <span className="cs-link">{m.text.split(' ')[0]}</span> {m.text.split(' ').slice(1).join(' ')}
+                            <span className="cs-link">{m.text.split(' ')[0]}</span>{' '}
+                            {m.text.split(' ').slice(1).join(' ')}
                           </span>
                         ) : (
                           m.text
@@ -431,26 +648,10 @@ export default function ClaudeSessionsDemo() {
                   {active.state === 'running' && <div className="cs-working cs-muted">Working…</div>}
                 </div>
 
-                {active.ask ? (
-                  <div className="cs-ask">
-                    <span>
-                      Allow <b>{active.ask.tool}</b> <span className="cs-mono">{active.ask.arg}</span>?
-                    </span>
-                    <span className="cs-ask-actions">
-                      <button type="button" className="cs-btn" onClick={() => deny(active)}>
-                        Deny
-                      </button>
-                      <button type="button" className="cs-btn cs-btn-blue" onClick={() => allow(active)}>
-                        Allow
-                      </button>
-                    </span>
-                  </div>
-                ) : (
-                  <div className="cs-reply">
-                    <span className="cs-muted">Reply…</span>
-                    <span className="cs-send">Send</span>
-                  </div>
-                )}
+                <div className="cs-reply">
+                  <span className="cs-muted">Reply…</span>
+                  <span className="cs-send">Send</span>
+                </div>
               </section>
             </>
           ) : (
@@ -459,17 +660,22 @@ export default function ClaudeSessionsDemo() {
                 <div className="cs-side-head">
                   <span className="cs-h1">Work</span>
                 </div>
-                <div className="cs-advisor">
+                <button
+                  type="button"
+                  className={`cs-advisor${approvals.length > 0 ? ' cs-advisor-waiting' : ''}`}
+                  onClick={() => approvals.length > 0 && setApprovalOpen(true)}
+                >
                   <span aria-hidden="true">✦</span> Advisor
-                </div>
+                  {approvals.length > 0 && <span className="cs-badge">{approvals.length} waiting</span>}
+                </button>
                 <div className="cs-nav cs-nav-on">
-                  Today <span className="cs-muted">3 picks</span>
+                  Today <span className="cs-muted">{picks.length} picks</span>
                 </div>
                 <div className="cs-nav">
                   MRs <span className="cs-muted">5</span>
                 </div>
                 <div className="cs-nav">
-                  Review <span className="cs-muted">{5 + reviews.length}</span>
+                  Review <span className="cs-muted">{5 + offers.length}</span>
                 </div>
                 <div className="cs-nav">
                   Follow-ups <span className="cs-muted">3</span>
@@ -489,11 +695,6 @@ export default function ClaudeSessionsDemo() {
                 <div className="cs-work-head">
                   <span className="cs-title">Today</span>
                   <span className="cs-muted">Picked 1:19 PM</span>
-                  {approval !== 'done' && (
-                    <button type="button" className="cs-pending" onClick={() => setApproval('open')}>
-                      1 change to approve
-                    </button>
-                  )}
                 </div>
 
                 <div className="cs-picks">
@@ -503,13 +704,30 @@ export default function ClaudeSessionsDemo() {
                       <div className="cs-pick-body">
                         <div className="cs-pick-top">
                           <span className="cs-pick-title">{p.title}</span>
-                          <span className={`cs-status-pill${p.status === 'in progress' ? ' cs-status-live' : ''}`}>{p.status}</span>
+                          <span className={`cs-status-pill${p.status === 'in progress' ? ' cs-status-live' : ''}`}>
+                            {p.status === 'swapping' ? 'asking the advisor…' : p.status}
+                          </span>
                         </div>
                         <span className="cs-pick-reason">{p.reason}</span>
                         {why === p.id && (
                           <span className="cs-why">
-                            Track {p.track} is at {p.track === 'Checkout' ? '60' : '40'}% of your week, and this is its oldest open item.
+                            <span className="cs-muted">You asked: Why "{p.title}" today?</span>
+                            <span>{whyAnswer[p.track]}</span>
                           </span>
+                        )}
+                        {swapping === p.id && (
+                          <form className="cs-swap" onSubmit={submitSwap}>
+                            <input
+                              aria-label={`Swap ${p.title}`}
+                              autoFocus
+                              placeholder="Swap for… name a ticket, paste an id, or say why not this one"
+                              value={swapReason}
+                              onChange={(e) => setSwapReason(e.target.value)}
+                            />
+                            <button type="submit" className="cs-btn cs-btn-blue" disabled={pool.length === 0}>
+                              Swap
+                            </button>
+                          </form>
                         )}
                         <div className="cs-pick-foot">
                           <span className="cs-muted">{p.sessionId ? '1 session' : p.track}</span>
@@ -520,14 +738,23 @@ export default function ClaudeSessionsDemo() {
                                 Open session
                               </button>
                             ) : (
-                              <button type="button" onClick={() => start(p)}>
+                              <button type="button" onClick={() => start(p)} disabled={p.status === 'swapping'}>
                                 ▷ Start
                               </button>
                             )}
-                            <button type="button" onClick={() => swap(p)} disabled={pool.length === 0}>
+                            <button
+                              type="button"
+                              onClick={() => setSwapping(swapping === p.id ? null : p.id)}
+                              aria-expanded={swapping === p.id}
+                              disabled={p.status === 'swapping'}
+                            >
                               Swap
                             </button>
-                            <button type="button" onClick={() => setWhy(why === p.id ? null : p.id)} aria-expanded={why === p.id}>
+                            <button
+                              type="button"
+                              onClick={() => setWhy(why === p.id ? null : p.id)}
+                              aria-expanded={why === p.id}
+                            >
                               Why?
                             </button>
                           </span>
@@ -556,34 +783,76 @@ export default function ClaudeSessionsDemo() {
           )}
         </div>
 
-        {approval === 'open' && (
+        {view === 'sessions' && active.ask && (
+          <div className="cs-scrim">
+            <div className="cs-dialog" role="dialog" aria-label={`${active.title} wants to use ${active.ask.tool}`}>
+              <div className="cs-dialog-head cs-dialog-head-private">
+                <b>{active.title}</b>
+                <span>{active.ask.tool}</span>
+              </div>
+              <div className="cs-dialog-body">
+                <span className="cs-dialog-title">{active.ask.heading}</span>
+                <span className="cs-muted">{active.ask.summary}</span>
+                <div className="cs-box">
+                  <b>{active.ask.field}</b>
+                  <span className="cs-mono cs-field">{active.ask.value}</span>
+                </div>
+                <div className="cs-box">
+                  <b>Why</b>
+                  <span className="cs-muted">{active.ask.why}</span>
+                </div>
+                <div className="cs-dialog-actions">
+                  <button type="button" className="cs-btn" onClick={() => deny(active)}>
+                    Deny
+                  </button>
+                  <button type="button" className="cs-btn cs-btn-blue" onClick={() => allow(active)}>
+                    Allow
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {approvalOpen && approval && (
           <div className="cs-scrim">
             <div className="cs-dialog" role="dialog" aria-label="Approve ClickUp change">
               <div className="cs-dialog-head">
                 <b>ClickUp</b>
-                <span>Your team sees this</span>
+                <span>
+                  Your team sees this
+                  {approvals.length > 1 && ` · ${approvals.length - 1} more waiting`}
+                </span>
               </div>
               <div className="cs-dialog-body">
-                <span className="cs-dialog-title">Move "Show checkout totals before tax" to delivered</span>
+                <span className="cs-dialog-title">
+                  Move "{approval.name}" to {approval.to}
+                </span>
                 <div className="cs-box">
                   <b>Change</b>
                   <div className="cs-change">
                     <span className="cs-muted">Status</span>
-                    <s>in progress</s>
+                    <s>{approval.from}</s>
                     <span>
-                      <i className="cs-green-sq" aria-hidden="true" /> delivered
+                      <i className="cs-green-sq" aria-hidden="true" /> {approval.to}
                     </span>
                   </div>
                 </div>
                 <div className="cs-box">
+                  <b>Details</b>
+                  <span>
+                    <span className="cs-muted">Ticket</span> <span className="cs-mono">CU-{approval.ticket}</span>
+                  </span>
+                </div>
+                <div className="cs-box">
                   <b>Why</b>
-                  <span className="cs-muted">Its MR !412 merged yesterday.</span>
+                  <span className="cs-muted">{approval.why}</span>
                 </div>
                 <div className="cs-dialog-actions">
-                  <button type="button" className="cs-btn" onClick={() => setApproval('pending')}>
+                  <button type="button" className="cs-btn" onClick={() => decide(approval, false)}>
                     Not now
                   </button>
-                  <button type="button" className="cs-btn cs-btn-blue" onClick={moveTicket}>
+                  <button type="button" className="cs-btn cs-btn-blue" onClick={() => decide(approval, true)}>
                     Move ticket
                   </button>
                 </div>
@@ -603,7 +872,10 @@ export default function ClaudeSessionsDemo() {
       </div>
 
       <figcaption className="cs-caption">
-        <span>A simplified mock of Claude Sessions. Start a pick, approve the ClickUp change, or answer a permission request.</span>
+        <span>
+          A simplified mock of Claude Sessions. Start a pick, answer the advisor's ClickUp changes, or handle a
+          permission request. Simulate a GitLab poll to get a review request.
+        </span>
         <span className="cs-caption-actions">
           <button type="button" onClick={poll}>
             Simulate GitLab poll
