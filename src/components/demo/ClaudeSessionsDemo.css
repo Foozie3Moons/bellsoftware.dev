@@ -1,0 +1,467 @@
+/* Claude Sessions demo. Colors come from the site tokens, so light and dark follow the theme. */
+
+.csd {
+  margin: var(--space-12) 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.csd-window {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.csd button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.csd-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Title bar */
+
+.csd-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--code-bg);
+}
+
+.csd-app {
+  font-weight: 600;
+  color: var(--fg-strong);
+}
+
+.csd-tabs {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.csd .csd-tab {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 6px;
+  color: var(--muted);
+}
+
+.csd .csd-tab[aria-selected='true'] {
+  background: var(--bg);
+  color: var(--fg-strong);
+  font-weight: 500;
+}
+
+.csd .csd-ghost {
+  margin-left: auto;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.csd .csd-ghost:hover {
+  color: var(--fg-strong);
+  border-color: var(--muted);
+}
+
+/* Body */
+
+.csd-body {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  min-height: 360px;
+}
+
+.csd-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-right: 1px solid var(--border);
+}
+
+.csd-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: var(--space-2) 0;
+}
+
+.csd .csd-session {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2);
+  border-radius: 6px;
+  text-align: left;
+}
+
+.csd .csd-session:hover {
+  background: var(--code-bg);
+}
+
+.csd .csd-session[aria-current='true'] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--fg-strong);
+}
+
+.csd-session-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.csd-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.csd-dot-running {
+  background: var(--accent);
+  animation: csd-pulse 1.4s ease-in-out infinite;
+}
+
+.csd-dot-waiting {
+  background: #d9862b;
+}
+
+.csd-dot-done {
+  background: var(--border);
+}
+
+@keyframes csd-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.csd-main {
+  padding: var(--space-3) var(--space-4) var(--space-6);
+  min-width: 0;
+}
+
+/* Work tab */
+
+.csd-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.csd-task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.csd-num {
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.csd-task-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.csd-task-title {
+  color: var(--fg-strong);
+}
+
+.csd-chip {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.csd-chip-in-progress {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.csd-chip-delivered {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: transparent;
+  color: var(--fg-strong);
+}
+
+.csd .csd-play {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.csd .csd-play:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.csd-play svg {
+  width: 14px;
+  height: 14px;
+}
+
+.csd-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: var(--space-2);
+}
+
+.csd-card-title {
+  color: var(--fg-strong);
+  font-weight: 500;
+}
+
+.csd-card-reason,
+.csd-card-done {
+  color: var(--muted);
+}
+
+.csd-quote {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--border);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.csd-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.csd .csd-btn {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.csd .csd-btn:hover {
+  border-color: var(--muted);
+}
+
+.csd .csd-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+  font-weight: 500;
+}
+
+.csd .csd-btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Sessions tab */
+
+.csd-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.csd-chat-title {
+  font-weight: 600;
+  color: var(--fg-strong);
+}
+
+.csd-status {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.csd-status-running {
+  color: var(--accent);
+}
+
+.csd-status-waiting {
+  color: #d9862b;
+}
+
+.csd-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.csd-msg {
+  max-width: 88%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 8px;
+}
+
+.csd-msg-you {
+  align-self: flex-end;
+  background: var(--code-bg);
+}
+
+.csd-msg-claude {
+  align-self: flex-start;
+  border: 1px solid var(--border);
+}
+
+.csd-msg-ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-color: #d9862b;
+}
+
+/* Notifications */
+
+.csd-toasts {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 166px;
+  pointer-events: none;
+}
+
+.csd-toast {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12);
+  animation: csd-in 180ms ease-out;
+}
+
+.csd-toast-title {
+  font-weight: 600;
+  color: var(--fg-strong);
+}
+
+.csd-toast-body {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@keyframes csd-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .csd-dot-running,
+  .csd-toast {
+    animation: none;
+  }
+}
+
+/* Caption */
+
+.csd-caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.csd .csd-reset {
+  flex: none;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Narrow screens: sessions become a row of chips above the main pane. */
+
+@media (max-width: 600px) {
+  .csd-bar {
+    flex-wrap: wrap;
+  }
+
+  .csd .csd-ghost {
+    margin-left: 0;
+  }
+
+  .csd-body {
+    grid-template-columns: 1fr;
+  }
+
+  .csd-side {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .csd-side .csd-label {
+    display: none;
+  }
+
+  .csd .csd-session {
+    width: auto;
+    flex: none;
+    max-width: 200px;
+  }
+
+  .csd-main {
+    padding-bottom: 96px;
+  }
+
+  .csd-toasts {
+    left: auto;
+    right: var(--space-3);
+    width: min(250px, calc(100% - 24px));
+  }
+}
