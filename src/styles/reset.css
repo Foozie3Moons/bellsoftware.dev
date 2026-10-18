@@ -27,6 +27,11 @@ svg {
   max-width: 100%;
 }
 
+img,
+video {
+  height: auto;
+}
+
 input,
 button,
 textarea,
