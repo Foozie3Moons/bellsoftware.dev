@@ -16,7 +16,7 @@ The process around the code makes it worse. Reviews, tickets, merge requests, an
 
 I'm a senior software engineer at a large multinational, and that overhead is a big part of the job. I've gone from Copilot in VS Code to Claude Code on my own projects to building my own tooling on top of it at work. This post covers what I built, why I built it, and what it costs me.
 
-The short version: the judgment stays with me. AI handles the overhead that used to sit between my ideas and the work.
+AI handles the overhead that used to sit between my ideas and the work, and the judgment stays with me.
 
 ## From Copilot to Claude Code
 
@@ -26,7 +26,7 @@ Making it work mostly meant trying to rebuild my Claude setup inside Copilot. I 
 
 But writing code is only part of my day. The rest is reviewing merge requests, creating ClickUp tickets, opening MRs, and keeping all of it in sync. Copilot didn't do any of that by default, so all that overhead was still mine to deal with.
 
-I've used Claude Code on my own time since around February or March. It made a huge difference on my personal projects, and I pushed hard for it at work.
+I've used Claude Code on my own time since February, mostly on my own machine. It made a huge difference on my personal projects, and I pushed hard for it at work.
 
 The company was more cautious. They wanted to do their own research and testing first, which is fair. I didn't want to put work on my personal subscription, so the workflow I had in mind stayed on hold until they gave me a seat.
 
@@ -68,11 +68,11 @@ So I built a session manager for Claude Code that keeps every session in a side 
 
 <p class="caption"><small><em>Every session sits in the side panel. The ones waiting on me sit at the top under Needs you.</em></small></p>
 
-I had a working version that did exactly what I wanted in a day. I knew Claude Code made building easy, but it has gotten much better in the six months I've used it. I didn't expect that much from so little work. It wasn't pretty though. My review of it on day one:
+I had a working version that did exactly what I wanted in a day. I knew Claude Code made building easy, but it has gotten much better since I started using it in February. I didn't expect that much from so little work. It wasn't pretty though. My review of it on day one:
 
 > Overall the UI sucks ass and is hard to read.
 
-Over the next week I turned it into an Electron app. I'm the user and the developer, so I decide what the guardrails are. Instead of hoping AI decides to use something, I just write code that does it.
+It was running as an Electron app by that evening, and over the next week I kept building on it. I'm the user and the developer, so I decide what the guardrails are. Instead of hoping AI decides to use something, I just write code that does it.
 
 A few things it does now:
 
@@ -86,9 +86,7 @@ With that in place I can run about five things at once while still building the 
 
 I've looked at OpenClaw and its offshoots, and I've built something similar for myself. I didn't want that at work. It comes with a lot of baggage, and giving an AI unrestricted access to everything is a bad idea.
 
-The part I did want was a personal assistant for the planning overhead: what's on track, what's slipping, and whether I'm aligned with the business.
-
-That's the weakness I opened with, and it's the one I most wanted help on.
+The part I did want was a personal assistant for the planning overhead: what's on track, what's slipping, and whether I'm aligned with the business. That's the weakness I opened with, and the one I most wanted help on.
 
 So Claude Sessions has a Work tab with an advisor agent. It has its own MCP set and its own memory. It knows every work track I'm on and the ClickUp boards behind them.
 
@@ -121,7 +119,7 @@ When I'm assigned a merge request, one click runs the stock AI review and stages
 
 <p class="caption"><small><em>A staged review. Each finding has a checkbox to keep or drop it, and nothing goes out until I click Post.</em></small></p>
 
-The AI drafts, I decide. Reviews go much faster, and nothing goes out that I haven't checked.
+Reviews go much faster, and nothing goes out that I haven't checked.
 
 ## The glue: events
 
@@ -151,7 +149,7 @@ First, it explains too much. I work better in a conversation than when something
 
 The second matters more. When Claude drafts a Slack message or an MR description for me, it attributes things to me that I never said. Opinions I don't hold, things I didn't do. Even good opinions don't belong in my mouth if they aren't mine.
 
-So I built a separate system for drafting. It has a guide for each kind of artifact, like MR descriptions and Slack messages. It lists Claude's usual tics, and it bans words like "footgun" and "load-bearing." The footgun ban has a clear origin:
+So I built a separate system for drafting. It has a guide for each kind of artifact, like MR descriptions and Slack messages. It lists Claude's usual tics, and it bans words like "footgun," "robust," and "seamless." The footgun ban has a clear origin:
 
 > I hate the word footgun and it's constantly used by claude models. Gotcha is much more common
 
