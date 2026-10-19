@@ -5,9 +5,10 @@ interface Props {
   title: string;
   pubDate: Date;
   readingTime: string;
+  updated?: Date;
 }
 
-const { title, pubDate, readingTime } = Astro.props;
+const { title, pubDate, readingTime, updated } = Astro.props;
 ---
 
 <header class="article-header">
@@ -16,6 +17,12 @@ const { title, pubDate, readingTime } = Astro.props;
     <time datetime={isoDate(pubDate)}>{formatLong(pubDate)}</time>
     <span class="dot">·</span>
     <span>{readingTime}</span>
+    {updated && (
+      <>
+        <span class="dot">·</span>
+        <a href="#changelog">Updated <time datetime={isoDate(updated)}>{formatLong(updated)}</time></a>
+      </>
+    )}
   </div>
 </header>
 
@@ -49,5 +56,20 @@ const { title, pubDate, readingTime } = Astro.props;
 
   .article-meta .dot {
     color: var(--border);
+  }
+
+  .article-meta a {
+    color: var(--muted);
+  }
+
+  .article-meta a:hover {
+    color: var(--fg);
+  }
+
+  @media (max-width: 640px) {
+    .article-meta {
+      flex-wrap: wrap;
+      row-gap: var(--space-1);
+    }
   }
 </style>

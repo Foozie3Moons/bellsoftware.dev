@@ -5,6 +5,7 @@ import ArticleHeader from '../../components/ArticleHeader.astro';
 import Prose from '../../components/Prose.astro';
 import { readingTime } from '../../utils/reading-time';
 import { isVisible } from '../../utils/drafts';
+import { formatLong, isoDate } from '../../utils/format-date';
 
 export async function getStaticPaths() {
   const posts = await getCollection('writing', isVisible);
@@ -17,6 +18,8 @@ export async function getStaticPaths() {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const minutes = readingTime(post.body ?? '');
+const changelog = [...(post.data.changelog ?? [])].sort((a, b) => b.date.getTime() - a.date.getTime());
+const updated = changelog[0]?.date;
 ---
 
 <Layout title={`${post.data.title} — bellsoftware`} description={post.data.description} active="writing">
@@ -34,11 +37,25 @@ const minutes = readingTime(post.body ?? '');
       </p>
     )}
 
-    <ArticleHeader title={post.data.title} pubDate={post.data.pubDate} readingTime={minutes} />
+    <ArticleHeader title={post.data.title} pubDate={post.data.pubDate} readingTime={minutes} updated={updated} />
 
     <Prose>
       <Content />
     </Prose>
+
+    {changelog.length > 0 && (
+      <section id="changelog" class="changelog" aria-labelledby="changelog-heading">
+        <h2 id="changelog-heading">Changelog</h2>
+        <ul>
+          {changelog.map((entry) => (
+            <li>
+              <time datetime={isoDate(entry.date)}>{formatLong(entry.date)}</time>
+              <span>{entry.note}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
 
     <div class="article-end">
       <a href="/writing">More writing</a>
@@ -90,6 +107,53 @@ const minutes = readingTime(post.body ?? '');
     padding: var(--space-3) var(--space-4);
     margin-bottom: var(--space-8);
     letter-spacing: 0.01em;
+  }
+
+  .changelog {
+    margin-top: var(--space-16);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--border);
+    font-size: var(--text-xs);
+    color: var(--muted);
+    scroll-margin-top: var(--space-8);
+  }
+
+  .changelog h2 {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--fg-strong);
+    letter-spacing: 0.02em;
+    margin-bottom: var(--space-4);
+  }
+
+  .changelog ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .changelog li {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    gap: var(--space-4);
+    line-height: 1.5;
+  }
+
+  .changelog time {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 640px) {
+    .changelog li {
+      grid-template-columns: 1fr;
+      gap: var(--space-1);
+    }
+  }
+
+  .changelog + .article-end {
+    margin-top: var(--space-8);
   }
 
   .article-end {
