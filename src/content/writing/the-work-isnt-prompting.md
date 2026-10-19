@@ -2,7 +2,7 @@
 title: "The work isn't prompting"
 description: "Six weeks building a household AI assistant from scratch, and what I expected to be prompt engineering turned out to be org design."
 pubDate: 2026-04-30
-updated: 2026-10-17
+updated: 2026-10-19
 ---
 
 I've been using agentic coding tools for a few months now, long enough to feel comfortable with how they work. Six weeks ago I set out to build a household AI assistant. I'd seen a lot online about OpenClaw and personal AI assistants, but I'm also very aware of the security issues it and others like it have had. So I decided to do what any developer with limited free time would do and build the whole thing myself from the ground up.
@@ -34,7 +34,7 @@ Code written on day one was called **legacy** by day four.
 
 An auth implementation shipped and got replaced with a completely different approach the same day. The first version never should have been committed.
 
-Some of this is on me. I was reviewing fast, trusting the agent to hold the line on conventions it had already been told. I had guardrails in place: coding style rules, conventions documented in project files. They weren't working. The agent read them, sometimes followed them, and sometimes didn't. Telling it once wasn't enough. Conventions needed machinery behind them.
+Some of this is on me. I was reviewing fast, trusting the agent to hold the line on conventions it had already been told. I had guardrails in place: coding style rules, conventions documented in project files. They weren't working. The first file I opened after one dashboard run was almost 800 lines. The React rules in the project said anything over 150 was doing too much. I also had to tell the agents to keep container logic out of pages, which the rules covered too. The agent read them, sometimes followed them, and sometimes didn't. Telling it once wasn't enough. Conventions needed machinery behind them.
 
 The breaking point came at 1 AM on a work night. I sat down and wrote seven specialist agents in one commit. Five minutes later I kicked off the first orchestrated task, because I couldn't afford to keep working the way I had been.
 
@@ -103,6 +103,8 @@ Now I can see:
 - Whether they're being used as intended
 
 Before this I had no idea what was going on. The only way to judge whether the fleet was working was vibes. It's not perfect, but at least now I have something to go on.
+
+I need that, because what an agent says it did and what it actually did don't always match. One session told me it had run tasks in parallel when it hadn't run anything in parallel at all.
 
 ### Mechanical enforcement
 
