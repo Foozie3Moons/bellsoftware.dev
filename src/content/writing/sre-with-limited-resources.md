@@ -37,11 +37,7 @@ The staffing assumption used to be explicit. In Google's original engagement mod
 
 Six failure modes come out of those two assumptions. Three come from staffing: latency SLO cardinality, alert fatigue, and the SME bottleneck. The other three come from traffic: noisy high-percentile data, slow burn-rate detection, and low traffic breaking the math.
 
-We hit most of them early. Looking back at the first alerts we set up:
-
-> A lot of the initial alerts set up when [we] started [our] SRE work were bad SLOs. It took a while to figure out a standard for latency SLOs specifically
-
-> they often had thresholds that were very low and would never alert under a SLO burn rate calculation, had ad-hoc buckets which made it impossible to maintain, or were too spikey to have a meaningful threshold
+We hit most of them early. A lot of our first alerts were bad SLOs, and it took a while to settle on a standard for latency SLOs in particular. Thresholds were often so low they would never fire under a burn rate calculation. Buckets were ad hoc, which made them impossible to maintain. Some services were too spiky for any threshold to mean anything.
 
 ### Latency SLO cardinality
 
