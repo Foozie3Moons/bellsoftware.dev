@@ -1,12 +1,12 @@
 ---
 title: "Do subagents save tokens?"
-description: "I built a plugin on the idea that subagents save tokens, then tested it. The main session doing the work itself used half the tokens, and the next model release moved the answer again."
+description: "I built a plugin on the idea that subagents save tokens, then tested it. Every model release moved the answer, so I stopped tuning the model and started building the guardrails around it."
 pubDate: 2026-10-17
 tags: ["ai", "claude-code", "subagents", "evals"]
 draft: true
 ---
 
-In April I wrote about [replacing one generalist agent with a fleet of specialists](/writing/the-work-isnt-prompting). Six months later I rarely hand the work itself to a subagent. The main session does it, and subagents run my searches and second opinions. What changed my mind was testing my own assumptions instead of trusting them.
+In April I wrote about [replacing one generalist agent with a fleet of specialists](/writing/the-work-isnt-prompting). Six months later I rarely hand the work itself to a subagent. The main session does it, and subagents run my searches and second opinions. What changed my mind was testing my own assumptions instead of trusting them. It also changed where I spend my time. I stopped tuning how the model performs and started building the guardrails around it.
 
 ## The claim
 
@@ -164,8 +164,17 @@ Optimizing for agent performance mostly isn't worth it. It's expensive, and mode
 
 None of this would have shown up without the A/B tests. Measuring was worth it. Building on an assumption I hadn't measured wasn't.
 
+## Where I put the effort now
+
+Every result in this post moved when the model moved. Sonnet 5.5 flipped the token result, and my plugin's agents switched models without a single commit. Anything I build to make the model perform better lasts about one release.
+
+Making the model better is Anthropic's job, and they have far more people and money on it than I ever will. What I can build is the deterministic code around the model: a CLI that only exposes the GitLab calls my workflow needs, an approval prompt before a ClickUp status changes, a hook that blocks a known mistake before it's written. None of that cares which model sits behind the alias. When the model gets better, it keeps working. When the model goes rogue, it's what stops it.
+
+That's where my time went instead. I wrote about it in [Where AI Actually Fits in My Dev Workflow](/writing/where-ai-actually-fits).
+
 ## What I'd do now
 
+- **Build guardrails before tuning.** Deterministic code keeps working when the model changes. Tuning has to be redone every release.
 - **Check the call count before trusting a cheaper model.** Sonnet 5 saved per token and spent more of them. Sonnet 5.5 didn't, so this depends on the model version.
 - **Use a subagent when I only need its conclusion.** Throwaway searches and surveys are the good case because the reading can be thrown away.
 - **Use one for a second opinion.** A context that didn't write the code reviews it without the author's assumptions.
