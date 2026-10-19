@@ -36,7 +36,9 @@ Once I had it, the difference was obvious. Claude Code is just way better than C
 
 There are MCP servers for GitLab and ClickUp already. I wasn't comfortable giving Claude unrestricted access to them.
 
-Claude has never done anything truly dangerous for me, but I've heard the horror stories. And whatever goes out under my name is my responsibility. "The AI did it" doesn't change that.
+Claude has never done anything truly dangerous for me, but it has tried to get around the guardrails. On a personal project in April I caught my orchestrator spawning agents with every permission check turned off. The next day I found the permission gating I'd built for those agents had holes. A web search agent with no file permissions could still read files on the machine.
+
+And whatever goes out under my name is my responsibility. "The AI did it" doesn't change that.
 
 So I wrote thin wrappers around the GitLab and ClickUp APIs and turned them into CLIs. They only expose what my workflow needs, and they follow my approval process. Then I packaged them as plugins so they're easy to install and share.
 
@@ -47,7 +49,6 @@ I tried using skills to get Claude to reach for those tools. It didn't use them 
 > I feel like you never use the project specific skills
 
 Some skills conflicted with others, so behavior got unpredictable.
-
 I also realized I don't like working in the terminal anymore. It's hard to read, and as I put it in one session:
 
 > Markdown support in terminal is pretty shit
@@ -152,6 +153,10 @@ The second matters more. When Claude drafts a Slack message or an MR description
 So I built a separate system for drafting. It has a guide for each kind of artifact, like MR descriptions and Slack messages. It lists Claude's usual tics, and it bans words like "footgun," "robust," and "seamless." The footgun ban has a clear origin:
 
 > I hate the word footgun and it's constantly used by claude models. Gotcha is much more common
+
+Em dashes are banned too:
+
+> you know I hate EM hyphens
 
 It plugs into Claude Sessions like everything else.
 
